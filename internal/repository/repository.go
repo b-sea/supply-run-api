@@ -4,32 +4,24 @@ import (
 	"github.com/b-sea/supply-run-api/internal/model"
 )
 
-type ICRUDRepository[D any, E any, F any] interface {
-	Find(filter *F) ([]E, error)
-	GetOne(key string) (E, error)
-	GetMany(keys []string) ([]E, error)
-
-	Create(entity E) (string, error)
-	Update(entity E) (string, error)
-	Delete(id any) error
+type IReadRepo[E model.Node, F any] interface {
+	// Find(filter *F) ([]*E, error)
+	GetOne(key string) (*E, error)
+	GetMany(keys []string) ([]*E, error)
 }
 
-type IProductRepository[D any, E model.Product, F model.NodeFilter] interface {
-	ICRUDRepository[D, E, F]
+type IReadWriteRepo[E model.Node, F any] interface {
+	IReadRepo[E, F]
+
+	Create(node *E) (string, error)
+	Update(node *E) (string, error)
+	Delete(id string) error
 }
 
-type IStoreRepository[D any, E model.Store, F model.NodeFilter] interface {
-	ICRUDRepository[D, E, F]
+type IProductReadRepo interface {
+	IReadRepo[model.Product, any]
 }
 
-type ILocationRepository[D any, E model.Location, F model.NodeFilter] interface {
-	ICRUDRepository[D, E, F]
-}
-
-type IShoppingListRepository[D any, E model.ShoppingList, F model.NodeFilter] interface {
-	ICRUDRepository[D, E, F]
-}
-
-type IListItemRepository[D any, E model.ListItem, F model.NodeFilter] interface {
-	ICRUDRepository[D, E, F]
+type IProductReadWriteRepo interface {
+	IReadWriteRepo[model.Product, any]
 }

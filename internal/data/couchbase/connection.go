@@ -8,7 +8,11 @@ import (
 	"github.com/couchbase/gocb/v2"
 )
 
-const bucket_name = "supply_run"
+const (
+	bucketName        = "supply_run"
+	entityScopeName   = "entities"
+	functionScopeName = "functions"
+)
 
 func NewConnection(cfg config.Config) (*gocb.Cluster, error) {
 	opts := gocb.ClusterOptions{
