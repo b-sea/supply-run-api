@@ -66,16 +66,16 @@ func (d productDTO) ToNode(metadata metadata) *model.Product {
 }
 
 type ProductRepository struct {
-	*crudRepository[productDTO, model.Product]
+	*crudRepository[productDTO, model.Product, model.ProductFilter]
 }
 
 func NewProductRepository(cluster *gocb.Cluster) *ProductRepository {
 	return &ProductRepository{
-		crudRepository: &crudRepository[productDTO, model.Product]{
-			cluster:         cluster,
-			scope_name:      entityScopeName,
-			collection_name: "products",
-			dtoType:         productType,
+		crudRepository: &crudRepository[productDTO, model.Product, model.ProductFilter]{
+			cluster:        cluster,
+			scopeName:      entityScopeName,
+			collectionName: "products",
+			dtoType:        productType,
 		},
 	}
 }

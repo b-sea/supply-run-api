@@ -85,16 +85,16 @@ func (d listItemDTO) ToNode(metadata metadata) *model.ListItem {
 }
 
 type ListItemRepository struct {
-	*crudRepository[listItemDTO, model.ListItem]
+	*crudRepository[listItemDTO, model.ListItem, any]
 }
 
 func NewListItemRepository(cluster *gocb.Cluster) *ListItemRepository {
 	return &ListItemRepository{
-		crudRepository: &crudRepository[listItemDTO, model.ListItem]{
-			cluster:         cluster,
-			scope_name:      functionScopeName,
-			collection_name: "list_items",
-			dtoType:         listItemType,
+		crudRepository: &crudRepository[listItemDTO, model.ListItem, any]{
+			cluster:        cluster,
+			scopeName:      functionScopeName,
+			collectionName: "list_items",
+			dtoType:        listItemType,
 		},
 	}
 }

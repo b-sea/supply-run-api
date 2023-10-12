@@ -57,16 +57,16 @@ func (d categoryDTO) ToNode(metadata metadata) *model.Category {
 }
 
 type CategoryRepository struct {
-	*crudRepository[categoryDTO, model.Category]
+	*crudRepository[categoryDTO, model.Category, any]
 }
 
 func NewCategoryRepository(cluster *gocb.Cluster) *CategoryRepository {
 	return &CategoryRepository{
-		crudRepository: &crudRepository[categoryDTO, model.Category]{
-			cluster:         cluster,
-			scope_name:      entityScopeName,
-			collection_name: "categories",
-			dtoType:         categoryType,
+		crudRepository: &crudRepository[categoryDTO, model.Category, any]{
+			cluster:        cluster,
+			scopeName:      entityScopeName,
+			collectionName: "categories",
+			dtoType:        categoryType,
 		},
 	}
 }

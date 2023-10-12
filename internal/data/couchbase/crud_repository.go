@@ -1,6 +1,7 @@
 package couchbase
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"time"
@@ -38,14 +39,25 @@ type dto[N model.Node] interface {
 	ToNode(metadata metadata) *N
 }
 
-type crudRepository[D dto[N], N model.Node] struct {
-	cluster         *gocb.Cluster
-	scope_name      string
-	collection_name string
-	dtoType         dtoType
+type crudRepository[D dto[N], N model.Node, F any] struct {
+	cluster        *gocb.Cluster
+	scopeName      string
+	collectionName string
+	dtoType        dtoType
 }
 
-func (r *crudRepository[D, N]) GetOne(key string) (*N, error) {
+func (r *crudRepository[D, N, F]) Find(filter F) ([]*N, error) {
+	query := bytes.NewBufferString(fmt.Sprintf("SELECT meta(`id`) FROM `%s`", r.collectionName))
+
+	if err := r.applyFilter(filter, query); err != nil {
+		return nil, err
+	}
+
+	r.cluster.Bucket(bucketName).Scope(r.scopeName).Query(query.String(), nil)
+	return nil, nil
+}
+
+func (r *crudRepository[D, N, F]) GetOne(key string) (*N, error) {
 	result, err := r.GetMany([]string{key})
 	if err != nil {
 		return nil, model.NewServerError(err)
@@ -61,8 +73,8 @@ func (r *crudRepository[D, N]) GetOne(key string) (*N, error) {
 	return result[0], nil
 }
 
-func (r *crudRepository[D, N]) GetMany(keys []string) ([]*N, error) {
-	collection := r.cluster.Bucket(bucketName).Scope(r.scope_name).Collection(r.collection_name)
+func (r *crudRepository[D, N, F]) GetMany(keys []string) ([]*N, error) {
+	collection := r.cluster.Bucket(bucketName).Scope(r.scopeName).Collection(r.collectionName)
 
 	ops := make([]gocb.BulkOp, len(keys))
 	for i, k := range keys {
@@ -93,14 +105,14 @@ func (r *crudRepository[D, N]) GetMany(keys []string) ([]*N, error) {
 	return result, nil
 }
 
-func (r *crudRepository[D, N]) upsert(node *N) (string, error) {
+func (r *crudRepository[D, N, F]) upsert(node *N) (string, error) {
 	var start D
 	dto, ok := start.FromNode(node).(D)
 	if !ok {
 		return "", model.NewServerError(fmt.Errorf("conversion error %T -> %T", node, start))
 	}
 
-	collection := r.cluster.Bucket(bucketName).Scope(r.scope_name).Collection(r.collection_name)
+	collection := r.cluster.Bucket(bucketName).Scope(r.scopeName).Collection(r.collectionName)
 	result, err := collection.Upsert(dto.GetMetadata().Key, dto, nil)
 	if err != nil {
 		return "", model.NewServerError(err)
@@ -109,7 +121,7 @@ func (r *crudRepository[D, N]) upsert(node *N) (string, error) {
 	return casToString(result.Cas()), nil
 }
 
-func (r *crudRepository[D, N]) Create(node *N) (string, error) {
+func (r *crudRepository[D, N, F]) Create(node *N) (string, error) {
 	result, err := r.upsert(node)
 	if err != nil {
 		return "", model.NewServerError(err)
@@ -117,7 +129,7 @@ func (r *crudRepository[D, N]) Create(node *N) (string, error) {
 	return result, nil
 }
 
-func (r *crudRepository[D, N]) Update(node *N) (string, error) {
+func (r *crudRepository[D, N, F]) Update(node *N) (string, error) {
 	result, err := r.upsert(node)
 	if err != nil {
 		return "", model.NewServerError(err)
@@ -125,8 +137,8 @@ func (r *crudRepository[D, N]) Update(node *N) (string, error) {
 	return result, nil
 }
 
-func (r *crudRepository[D, N]) Delete(key string) error {
-	collection := r.cluster.Bucket(bucketName).Scope(r.scope_name).Collection(r.collection_name)
+func (r *crudRepository[D, N, F]) Delete(key string) error {
+	collection := r.cluster.Bucket(bucketName).Scope(r.scopeName).Collection(r.collectionName)
 	_, err := collection.Remove(key, nil)
 	if err != nil {
 		return model.NewServerError(err)

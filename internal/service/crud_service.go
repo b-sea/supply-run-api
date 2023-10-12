@@ -20,7 +20,7 @@ type IReadWriteService[N model.Node, F any, C model.CreateInput[N], U model.Upda
 }
 
 type crudService[N model.Node, F any, C model.CreateInput[N], U model.UpdateInput[N]] struct {
-	repo repository.IReadWriteRepo[N, model.NodeFilter]
+	repo repository.IReadWriteRepo[N, F]
 	kind model.Kind
 }
 
