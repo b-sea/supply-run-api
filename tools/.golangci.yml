@@ -41,3 +41,8 @@ linters-settings:
       rules:
         json: snake
         yaml: snake
+
+  varnamelen:
+    ignore-type-assert-ok: true
+    ignore-map-ok: true
+    ignore-chan-recv-ok: true

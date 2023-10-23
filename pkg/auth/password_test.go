@@ -171,6 +171,13 @@ func TestPasswordServiceGeneratePasswordHash(t *testing.T) {
 			password: "password",
 			result:   "1a2b3c4d",
 		},
+		"really long password": {
+			encryptRepo: &MockEncryptRepo{
+				GenerateResult: "1a2b3c4d",
+			},
+			password: "this is a really long password, how are you today? i'm doing fine, thanks for asking.",
+			result:   "1a2b3c4d",
+		},
 		"error": {
 			encryptRepo: &MockEncryptRepo{
 				GenerateErr: errors.New("some hash error"),
@@ -186,7 +193,7 @@ func TestPasswordServiceGeneratePasswordHash(t *testing.T) {
 		config := auth.PasswordConfig{
 			EncryptRepo:    testCase.encryptRepo,
 			MinLength:      8,
-			MaxLength:      100,
+			MaxLength:      20,
 			RequireUpper:   true,
 			RequireLower:   true,
 			RequireNumber:  true,

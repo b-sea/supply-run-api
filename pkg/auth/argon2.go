@@ -27,6 +27,7 @@ type IEncryptRepo interface {
 	Generate(input string) (string, error)
 }
 
+// Argon2Config defines all fields required to create an Argon2Repo.
 type Argon2Config struct {
 	Params *Argon2Params
 	Salt   func(uint32) ([]byte, error)

@@ -233,5 +233,6 @@ func SubjectFromContext(ctx context.Context) (string, bool) {
 	}
 
 	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+
 	return claims.Subject, ok
 }

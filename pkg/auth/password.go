@@ -6,6 +6,8 @@ import (
 	"unicode"
 )
 
+const maxLength = 255
+
 // InvalidPasswordError is raised when a password does not pass validation.
 type InvalidPasswordError struct {
 	Issues []string `json:"issues"`
@@ -49,6 +51,10 @@ type PasswordService struct {
 
 // NewPasswordService creates a new PasswordService.
 func NewPasswordService(config PasswordConfig) *PasswordService {
+	if config.MaxLength == 0 {
+		config.MaxLength = maxLength
+	}
+
 	return &PasswordService{
 		encryptRepo:    config.EncryptRepo,
 		minLength:      config.MinLength,
@@ -123,6 +129,11 @@ func (s *PasswordService) VerifyPassword(password string, passwordHash string) (
 
 // GeneratePasswordHash encrypts the given password.
 func (s *PasswordService) GeneratePasswordHash(password string) (string, error) {
+	runes := []rune(password)
+	if len(runes) > s.maxLength {
+		password = string(runes[:s.maxLength])
+	}
+
 	result, err := s.encryptRepo.Generate(password)
 	if err != nil {
 		return "", fmt.Errorf("%w", err)
