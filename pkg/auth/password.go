@@ -27,44 +27,44 @@ type IPasswordService interface {
 type PasswordConfig struct {
 	EncryptRepo IEncryptRepo
 
-	MinLength        int
-	MaxLength        int
-	RequireUppercase bool
-	RequireLowercase bool
-	RequireNumber    bool
-	RequireSpecial   bool
+	MinLength      int
+	MaxLength      int
+	RequireUpper   bool
+	RequireLower   bool
+	RequireNumber  bool
+	RequireSpecial bool
 }
 
 // PasswordService implements a standard password managing service.
 type PasswordService struct {
 	encryptRepo IEncryptRepo
 
-	minLength        int
-	maxLength        int
-	requireUppercase bool
-	requireLowercase bool
-	requireNumber    bool
-	requireSpecial   bool
+	minLength      int
+	maxLength      int
+	requireUpper   bool
+	requireLower   bool
+	requireNumber  bool
+	requireSpecial bool
 }
 
 // NewPasswordService creates a new PasswordService.
 func NewPasswordService(config PasswordConfig) *PasswordService {
 	return &PasswordService{
-		encryptRepo:      config.EncryptRepo,
-		minLength:        config.MinLength,
-		maxLength:        config.MaxLength,
-		requireUppercase: config.RequireUppercase,
-		requireLowercase: config.RequireLowercase,
-		requireNumber:    config.RequireNumber,
-		requireSpecial:   config.RequireSpecial,
+		encryptRepo:    config.EncryptRepo,
+		minLength:      config.MinLength,
+		maxLength:      config.MaxLength,
+		requireUpper:   config.RequireUpper,
+		requireLower:   config.RequireLower,
+		requireNumber:  config.RequireNumber,
+		requireSpecial: config.RequireSpecial,
 	}
 }
 
 // ValidatePassword checks a given password against any enabled complexity rules.
 func (s *PasswordService) ValidatePassword(password string) error {
 	hasNumber := false
-	hasUppercase := false
-	hasLowercase := false
+	hasUpper := false
+	hasLower := false
 	hasSpecial := false
 
 	for _, char := range password {
@@ -72,9 +72,9 @@ func (s *PasswordService) ValidatePassword(password string) error {
 		case unicode.IsNumber(char):
 			hasNumber = true
 		case unicode.IsUpper(char):
-			hasUppercase = true
+			hasUpper = true
 		case unicode.IsLower(char):
-			hasLowercase = true
+			hasLower = true
 		case unicode.IsPunct(char) || unicode.IsSymbol(char):
 			hasSpecial = true
 		default:
@@ -86,11 +86,11 @@ func (s *PasswordService) ValidatePassword(password string) error {
 		issues = append(issues, fmt.Sprintf("password must be at least %d characters", s.minLength))
 	}
 
-	if s.requireUppercase && !hasUppercase {
+	if s.requireUpper && !hasUpper {
 		issues = append(issues, "at least one uppercase character required")
 	}
 
-	if s.requireLowercase && !hasLowercase {
+	if s.requireLower && !hasLower {
 		issues = append(issues, "at least one lowercase character required")
 	}
 

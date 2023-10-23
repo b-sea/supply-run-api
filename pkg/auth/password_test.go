@@ -61,12 +61,12 @@ func TestPasswordServiceValidatePassword(t *testing.T) {
 		name, testCase := name, testCase
 
 		config := auth.PasswordConfig{
-			MinLength:        8,
-			MaxLength:        100,
-			RequireUppercase: true,
-			RequireLowercase: true,
-			RequireNumber:    true,
-			RequireSpecial:   true,
+			MinLength:      8,
+			MaxLength:      100,
+			RequireUpper:   true,
+			RequireLower:   true,
+			RequireNumber:  true,
+			RequireSpecial: true,
 		}
 
 		pwdService := auth.NewPasswordService(config)
@@ -127,13 +127,13 @@ func TestPasswordServiceVerifyPassword(t *testing.T) {
 		name, testCase := name, testCase
 
 		config := auth.PasswordConfig{
-			EncryptRepo:      testCase.encryptRepo,
-			MinLength:        8,
-			MaxLength:        100,
-			RequireUppercase: true,
-			RequireLowercase: true,
-			RequireNumber:    true,
-			RequireSpecial:   true,
+			EncryptRepo:    testCase.encryptRepo,
+			MinLength:      8,
+			MaxLength:      100,
+			RequireUpper:   true,
+			RequireLower:   true,
+			RequireNumber:  true,
+			RequireSpecial: true,
 		}
 
 		pwdService := auth.NewPasswordService(config)
@@ -184,13 +184,13 @@ func TestPasswordServiceGeneratePasswordHash(t *testing.T) {
 		name, testCase := name, testCase
 
 		config := auth.PasswordConfig{
-			EncryptRepo:      testCase.encryptRepo,
-			MinLength:        8,
-			MaxLength:        100,
-			RequireUppercase: true,
-			RequireLowercase: true,
-			RequireNumber:    true,
-			RequireSpecial:   true,
+			EncryptRepo:    testCase.encryptRepo,
+			MinLength:      8,
+			MaxLength:      100,
+			RequireUpper:   true,
+			RequireLower:   true,
+			RequireNumber:  true,
+			RequireSpecial: true,
 		}
 
 		pwdService := auth.NewPasswordService(config)
