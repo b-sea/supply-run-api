@@ -10,6 +10,9 @@ endif
 	@printf "// Main package is the entrypoint for the program\npackage main\n\nfunc main() {}\n" > cmd/main.go
 	@printf "package main_test\n" > cmd/main_test.go
 
+setup:
+	go mod tidy
+
 cert:
 	@mkdir -p ./.cert
 	@openssl genrsa -out ./.cert/id_rsa 4096
@@ -21,3 +24,4 @@ test:
 
 lint:
 	@golangci-lint run -c tools/.golangci.yml ./pkg/auth/*
+
