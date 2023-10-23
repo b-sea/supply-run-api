@@ -19,7 +19,7 @@ func (e InvalidPasswordError) Error() string {
 
 // IPasswordService defines all functions required for managing passwords.
 type IPasswordService interface {
-	ValidatePassword(password string) error
+	ValidatePassword(password string) (bool, error)
 	VerifyPassword(password string, passwordHash string) (bool, error)
 
 	GeneratePasswordHash(password string) (string, error)
