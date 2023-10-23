@@ -9,3 +9,15 @@ endif
 	@touch go.sum
 	@printf "// Main package is the entrypoint for the program\npackage main\n\nfunc main() {}\n" > cmd/main.go
 	@printf "package main_test\n" > cmd/main_test.go
+
+cert:
+	@mkdir -p ./.cert
+	@openssl genrsa -out ./.cert/id_rsa 4096
+	@openssl rsa -in ./.cert/id_rsa -pubout -out ./.cert/id_rsa.pub
+
+test:
+	@mkdir -p .test
+	@go test -coverprofile=./test/coverage.out ./...
+
+lint:
+	@golangci-lint run -c tools/.golangci.yml ./pkg/auth/*

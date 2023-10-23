@@ -1,0 +1,43 @@
+issues:
+  max-per-linter: 0
+  max-same-issues: 0
+  exclude-use-default: false
+  exclude-rules:
+    - path: (.+)_test.go
+      linters:
+        - dupl
+        - gosec
+        - funlen
+        - goerr113
+
+
+linters:
+  enable-all: true
+  disable:
+    - varcheck
+    - nosnakecase
+    - golint
+    - maligned
+    - structcheck
+    - scopelint
+    - deadcode
+    - ifshort
+    - exhaustivestruct
+    - interfacer
+    - exhaustruct
+    - depguard
+    - testifylint
+    - godox
+    - nlreturn
+
+linters-settings:
+  cyclop:
+    max-complexity: 18
+    package-average: 10.0
+
+  tagliatelle:
+    case:
+      use-field-name: true
+      rules:
+        json: snake
+        yaml: snake

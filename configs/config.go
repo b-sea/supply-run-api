@@ -17,6 +17,32 @@ type Config struct {
 		User string `yaml:"user"`
 		Pwd  string `yaml:"pwd"`
 	} `yaml:"couchbase"`
+
+	Passwords struct {
+		MinLen    int  `yaml:"minLen"`
+		MaxLen    int  `yaml:"minLen"`
+		Uppercase bool `yaml:"uppercase"`
+		Lowercase bool `yaml:"lowercase"`
+		Number    bool `yaml:"number"`
+		Special   bool `yaml:"special"`
+	} `yaml:"passwords"`
+
+	Tokens struct {
+		SignMethod     string `yaml:"signMethod"`
+		PublicKeyPath  string `yaml:"publicKeyPath"`
+		PrivateKeyPath string `yaml:"privateKeyPath"`
+		Issuer         string `yaml:"issuer"`
+		AccessTimeout  int    `yaml:"accessTimeout"`
+		RefreshTimeout int    `yaml:"refreshTimeout"`
+	} `yaml:"tokens"`
+
+	Argon2 struct {
+		Memory     uint32 `yaml:"memory"`
+		Passes     uint32 `yaml:"passes"`
+		Threads    uint8  `yaml:"threads"`
+		SaltLength uint32 `yaml:"saltLength"`
+		KeyLength  uint32 `yaml:"keyLength"`
+	} `yaml:"argon2"`
 }
 
 func Load() (*Config, error) {

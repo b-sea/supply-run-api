@@ -2,3 +2,26 @@ couchbase:
   url: 
   user:
   pwd:
+
+argon2:
+  memory: 12
+  threads: 1
+  passes: 3
+  saltLength: 16
+  keyLength: 32
+  
+passwords:
+  minLen: 12
+  maxLen: 64
+  uppercase: true
+  lowercase: true
+  number: true
+  special: true
+
+tokens:
+  signMethod: "RS256"
+  publicKeyPath: ""
+  privateKeyPath: ""
+  issuer: "supply-run"
+  accessTimeout: 900
+  refreshTimeout: 2592000
