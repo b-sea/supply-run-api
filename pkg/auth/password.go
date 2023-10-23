@@ -15,12 +15,6 @@ func (e InvalidPasswordError) Error() string {
 	return strings.Join(e.Issues, ", ")
 }
 
-func newInvalidPasswordError(issues []string) *InvalidPasswordError {
-	return &InvalidPasswordError{
-		Issues: issues,
-	}
-}
-
 // IPasswordService defines all functions required for managing passwords.
 type IPasswordService interface {
 	ValidatePassword(password string) error
@@ -109,7 +103,9 @@ func (s *PasswordService) ValidatePassword(password string) error {
 	}
 
 	if len(issues) > 0 {
-		return newInvalidPasswordError(issues)
+		return InvalidPasswordError{
+			Issues: issues,
+		}
 	}
 
 	return nil
