@@ -14,12 +14,12 @@ type InvalidPasswordError struct {
 }
 
 func (e InvalidPasswordError) Error() string {
-	return strings.Join(e.Issues, ", ")
+	return fmt.Sprintf("invalid password: %s", strings.Join(e.Issues, ", "))
 }
 
 // IPasswordService defines all functions required for managing passwords.
 type IPasswordService interface {
-	ValidatePassword(password string) (bool, error)
+	ValidatePassword(password string) error
 	VerifyPassword(password string, passwordHash string) (bool, error)
 
 	GeneratePasswordHash(password string) (string, error)

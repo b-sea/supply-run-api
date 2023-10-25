@@ -75,7 +75,6 @@ func TestPasswordServiceValidatePassword(t *testing.T) {
 			s.Parallel()
 
 			err := pwdService.ValidatePassword(testCase.password)
-
 			if testCase.err == nil {
 				assert.NoError(t, err, "no error expected")
 			} else {

@@ -1,7 +1,6 @@
 package auth_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -429,64 +428,24 @@ func TestFromHeader(t *testing.T) {
 	for name, testCase := range testCases {
 		name, testCase := name, testCase
 
-		t.Run(name, func(s *testing.T) {
-			s.Parallel()
+		config := auth.TokenConfig{
+			PublicKey:      []byte(publicKey),
+			PrivateKey:     []byte(privateKey),
+			SignMethod:     "RS256",
+			Issuer:         "unit-tests",
+			AccessTimeout:  time.Hour,
+			RefreshTimeout: time.Hour,
+		}
 
-			result, ok := auth.FromHeader(testCase.header)
-
-			assert.Equal(t, testCase.result, result, "different results")
-			assert.Equal(t, testCase.ok, ok, "different ok")
-		})
-	}
-}
-
-func TestContextRoundTrip(t *testing.T) {
-	t.Parallel()
-
-	config := auth.TokenConfig{
-		PublicKey:      []byte(publicKey),
-		PrivateKey:     []byte(privateKey),
-		SignMethod:     "RS256",
-		Issuer:         "unit-tests",
-		AccessTimeout:  time.Hour,
-		RefreshTimeout: time.Hour,
-	}
-
-	tokenService, err := auth.NewTokenService(config)
-	if err == nil {
-		assert.NoError(t, err, "no error expected during service creation")
-	}
-
-	validToken, err := tokenService.ParseAccessToken(validAccessToken)
-	if err == nil {
-		assert.NoError(t, err, "no error expected during token parse")
-	}
-
-	type test struct {
-		token  *jwt.Token
-		result string
-		ok     bool
-	}
-
-	testCases := map[string]test{
-		"success": {
-			token:  validToken,
-			result: "user-id",
-			ok:     true,
-		},
-		"no token": {
-			ok: false,
-		},
-	}
-
-	for name, testCase := range testCases {
-		name, testCase := name, testCase
+		tokenService, err := auth.NewTokenService(config)
+		if err == nil {
+			assert.NoError(t, err, "no error expected during service creation")
+		}
 
 		t.Run(name, func(s *testing.T) {
 			s.Parallel()
 
-			ctx := auth.NewTokenContext(context.Background(), testCase.token)
-			result, ok := auth.SubjectFromContext(ctx)
+			result, ok := tokenService.FromHeader(testCase.header)
 
 			assert.Equal(t, testCase.result, result, "different results")
 			assert.Equal(t, testCase.ok, ok, "different ok")

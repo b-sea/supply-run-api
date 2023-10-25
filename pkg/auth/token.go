@@ -2,7 +2,6 @@
 package auth
 
 import (
-	"context"
 	"crypto/rsa"
 	"errors"
 	"fmt"
@@ -17,9 +16,8 @@ import (
 type contextKey int
 
 const (
-	tokenTypeKey     = "typ"
-	tokenTypeAccess  = "JWT-ACCESS"
-	tokenTypeRefresh = "JWT-REFRESH"
+	tokenAccessAud  = "access"
+	tokenRefreshAud = "refresh"
 
 	headerKey       = "Authorization"
 	headerTokenType = "Bearer "
@@ -29,12 +27,6 @@ const (
 var (
 	// Timestamp is a function to generate a timestamp value.
 	Timestamp = time.Now //nolint: gochecknoglobals
-
-	// ErrAuthentication is raised when authentication fails.
-	ErrAuthentication = errors.New("authentication error")
-
-	// ErrAuthorization is raised when authorization fails.
-	ErrAuthorization = errors.New("authorization error")
 
 	// ErrRSAKey is raised when RSA keys encounter an error.
 	ErrRSAKey = errors.New("rsa key error")
@@ -57,6 +49,8 @@ type ITokenService interface {
 
 	GenerateAccessToken(sub string) (string, error)
 	GenerateRefreshToken(sub string) (string, error)
+
+	FromHeader(header http.Header) (string, bool)
 }
 
 // TokenConfig defines all fields required to create a TokenService.
@@ -66,6 +60,7 @@ type TokenConfig struct {
 	PrivateKey []byte
 
 	Issuer         string
+	Audience       string
 	AccessTimeout  time.Duration
 	RefreshTimeout time.Duration
 
@@ -79,6 +74,7 @@ type TokenService struct {
 	verifyKey  *rsa.PublicKey
 
 	issuer         string
+	audience       string
 	accessTimeout  time.Duration
 	refreshTimeout time.Duration
 
@@ -110,6 +106,7 @@ func NewTokenService(config TokenConfig) (*TokenService, error) {
 		verifyKey:      publicKey,
 		signKey:        privateKey,
 		issuer:         config.Issuer,
+		audience:       config.Audience,
 		accessTimeout:  config.AccessTimeout,
 		refreshTimeout: config.RefreshTimeout,
 		idGenerator:    config.IDGenerator,
@@ -118,25 +115,6 @@ func NewTokenService(config TokenConfig) (*TokenService, error) {
 
 // ParseAccessToken verifies and transforms a given token string into an access JWT.
 func (s *TokenService) ParseAccessToken(tokenString string) (*jwt.Token, error) {
-	token, err := s.parseToken(tokenString, tokenTypeAccess)
-	if err != nil {
-		return nil, err
-	}
-
-	return token, nil
-}
-
-// ParseRefreshToken verifies and transforms a given token string into a refresh JWT.
-func (s *TokenService) ParseRefreshToken(tokenString string) (*jwt.Token, error) {
-	token, err := s.parseToken(tokenString, tokenTypeRefresh)
-	if err != nil {
-		return nil, err
-	}
-
-	return token, nil
-}
-
-func (s *TokenService) parseToken(tokenString string, typ string) (*jwt.Token, error) {
 	var claims jwt.RegisteredClaims
 
 	token, err := jwt.ParseWithClaims(
@@ -146,6 +124,8 @@ func (s *TokenService) parseToken(tokenString string, typ string) (*jwt.Token, e
 			return s.verifyKey, nil
 		},
 		jwt.WithIssuer(s.issuer),
+		jwt.WithAudience(s.audience),
+		jwt.WithAudience(tokenAccessAud),
 		jwt.WithIssuedAt(),
 		jwt.WithValidMethods([]string{s.signMethod}),
 	)
@@ -153,10 +133,27 @@ func (s *TokenService) parseToken(tokenString string, typ string) (*jwt.Token, e
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	// Custom verification
-	tokenType, ok := token.Header[tokenTypeKey].(string)
-	if !ok || tokenType != typ || !token.Valid {
-		return nil, fmt.Errorf("%w", jwt.ErrTokenUnverifiable)
+	return token, nil
+}
+
+// ParseRefreshToken verifies and transforms a given token string into a refresh JWT.
+func (s *TokenService) ParseRefreshToken(tokenString string) (*jwt.Token, error) {
+	var claims jwt.RegisteredClaims
+
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&claims,
+		func(t *jwt.Token) (interface{}, error) {
+			return s.verifyKey, nil
+		},
+		jwt.WithIssuer(s.issuer),
+		jwt.WithAudience(s.audience),
+		jwt.WithAudience(tokenRefreshAud),
+		jwt.WithIssuedAt(),
+		jwt.WithValidMethods([]string{s.signMethod}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	return token, nil
@@ -164,38 +161,39 @@ func (s *TokenService) parseToken(tokenString string, typ string) (*jwt.Token, e
 
 // GenerateAccessToken creates and signes a new access JWT.
 func (s *TokenService) GenerateAccessToken(sub string) (string, error) {
-	token, err := s.generateToken(sub, s.accessTimeout, tokenTypeAccess)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
-}
-
-// GenerateRefreshToken creates and signes a new refresh JWT.
-func (s *TokenService) GenerateRefreshToken(sub string) (string, error) {
-	token, err := s.generateToken(sub, s.refreshTimeout, tokenTypeRefresh)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
-}
-
-func (s *TokenService) generateToken(sub string, timeout time.Duration, typ string) (string, error) {
 	token := jwt.NewWithClaims(
 		jwt.GetSigningMethod(s.signMethod),
 		&jwt.RegisteredClaims{
 			ID:        s.idGenerator(),
 			Subject:   sub,
 			Issuer:    s.issuer,
-			ExpiresAt: jwt.NewNumericDate(Timestamp().Add(timeout)),
+			Audience:  jwt.ClaimStrings([]string{s.audience, tokenAccessAud}),
+			ExpiresAt: jwt.NewNumericDate(Timestamp().Add(s.accessTimeout)),
 			IssuedAt:  jwt.NewNumericDate(Timestamp()),
 		},
 	)
 
-	// Custom headers
-	token.Header[tokenTypeKey] = typ
+	signed, err := token.SignedString(s.signKey)
+	if err != nil {
+		return "", jwtSigningError(err)
+	}
+
+	return signed, nil
+}
+
+// GenerateRefreshToken creates and signes a new refresh JWT.
+func (s *TokenService) GenerateRefreshToken(sub string) (string, error) {
+	token := jwt.NewWithClaims(
+		jwt.GetSigningMethod(s.signMethod),
+		&jwt.RegisteredClaims{
+			ID:        s.idGenerator(),
+			Subject:   sub,
+			Issuer:    s.issuer,
+			Audience:  jwt.ClaimStrings([]string{s.audience, tokenRefreshAud}),
+			ExpiresAt: jwt.NewNumericDate(Timestamp().Add(s.accessTimeout)),
+			IssuedAt:  jwt.NewNumericDate(Timestamp()),
+		},
+	)
 
 	signed, err := token.SignedString(s.signKey)
 	if err != nil {
@@ -206,7 +204,7 @@ func (s *TokenService) generateToken(sub string, timeout time.Duration, typ stri
 }
 
 // FromHeader retrieves a token string from the given headers, if it exists.
-func FromHeader(header http.Header) (string, bool) {
+func (s *TokenService) FromHeader(header http.Header) (string, bool) {
 	bearer := header[headerKey]
 	if bearer == nil || len(bearer) != 1 {
 		return "", false
@@ -218,21 +216,4 @@ func FromHeader(header http.Header) (string, bool) {
 	}
 
 	return token, true
-}
-
-// NewTokenContext returns a new context that carries a JWT.
-func NewTokenContext(ctx context.Context, token *jwt.Token) context.Context {
-	return context.WithValue(ctx, contextTokenKey, token)
-}
-
-// SubjectFromContext retrieves a token sub claim from the given context, if it exists.
-func SubjectFromContext(ctx context.Context) (string, bool) {
-	token, ok := ctx.Value(contextTokenKey).(*jwt.Token)
-	if !ok || token == nil {
-		return "", false
-	}
-
-	claims, ok := token.Claims.(*jwt.RegisteredClaims)
-
-	return claims.Subject, ok
 }

@@ -1,5 +1,7 @@
+// Package model defines all data entities shared between front end, service, and repository layers.
 package model
 
+// StringFilter defines all properties to filter a string value.
 type StringFilter struct {
 	Eq *string `json:"eq"`
 	Ne *string `json:"ne"`

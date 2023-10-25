@@ -1,30 +1,31 @@
+// Package service implements all business logic for the API.
 package service
 
 import (
 	"context"
-	"encoding/base64"
+	"errors"
 	"fmt"
-	"strings"
+	"time"
 
 	"github.com/b-sea/supply-run-api/internal/model"
 	"github.com/b-sea/supply-run-api/internal/repository"
 	"github.com/b-sea/supply-run-api/pkg/auth"
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
-const (
-	basicAuthSep = ":"
-	basicAuthLen = 2
-)
+type contextKey string
+
+const accountIDContextKey contextKey = "accountID"
 
 type IAccountService interface {
-	BasicAuth(encoded string) (*model.TokenSet, error)
-	RefreshToken(ctx context.Context, token string) (string, error)
-	ChangePassword(ctx context.Context, password string) (bool, error)
-
-	GetOne(ctx context.Context, id model.ID) (*model.Account, error)
-	Create(ctx context.Context, input model.CreateAccountInput) (model.CreateResult, error)
-	Update(ctx context.Context, input model.UpdateAccountInput) (model.UpdateResult, error)
+	Signup(input model.CreateAccountInput) (*model.ID, error)
+	Login(username string, password string) (*model.LoginResult, error)
+	Profile(ctx context.Context) (*model.Account, error)
+	Update(ctx context.Context, input model.UpdateAccountInput) error
+	RefreshToken(token string) (string, error)
 	Delete(ctx context.Context, id model.ID) error
+	NewContext(ctx context.Context, username string) context.Context
 }
 
 type AccountConfig struct {
@@ -47,43 +48,197 @@ func NewAccountService(config AccountConfig) *AccountService {
 	}
 }
 
-func (s *AccountService) BasicAuth(encoded string) (*model.TokenSet, error) {
-	decoded, err := base64.StdEncoding.DecodeString(encoded)
+func (s *AccountService) Login(username string, password string) (*model.LoginResult, error) {
+	found, err := s.repo.Find(&model.AccountFilter{Username: &model.StringFilter{Eq: &username}})
 	if err != nil {
-		return nil, model.BadRequestError{Reason: "invalid credential format"}
+		logrus.Error(err)
+		return nil, fmt.Errorf("%w", err)
 	}
 
-	credentials := strings.Split(string(decoded), basicAuthSep)
-	if len(credentials) != basicAuthLen {
-		return nil, model.BadRequestError{Reason: "invalid credential format"}
+	if len(found) != 1 {
+		return nil, ErrAuthentication
 	}
 
-	found, err := s.repo.Find(&model.AccountFilter{Username: model.StringFilter{Eq: &credentials[0]}})
-	if err != nil || len(found) != 1 {
-		return nil, model.AuthenticationError{}
+	if ok, err := s.pwd.VerifyPassword(password, found[0].Password); !ok || err != nil {
+		return nil, ErrAuthentication
 	}
 
-	if ok, err := s.pwd.VerifyPassword(found[0].Password, credentials[1]); !ok || err != nil {
-		return nil, model.AuthenticationError{}
-	}
-
-	found[0].Password, err = s.pwd.GeneratePasswordHash(credentials[1])
+	now := time.Now().UTC()
+	found[0].LastLogin = &now
+	found[0].Password, err = s.pwd.GeneratePasswordHash(password)
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	access, err := s.token.GenerateAccessToken(found[0].ID.String())
-	if err != nil {
+	if err = s.repo.Update(*found[0]); err != nil {
+		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	refresh, err := s.token.GenerateRefreshToken(found[0].ID.String())
+	access, err := s.token.GenerateAccessToken(found[0].Username)
 	if err != nil {
+		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	return &model.TokenSet{
-		Access:  access,
-		Refresh: refresh,
+	refresh, err := s.token.GenerateRefreshToken(found[0].Username)
+	if err != nil {
+		logrus.Error(err)
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	return &model.LoginResult{
+		AccessToken:  access,
+		RefreshToken: refresh,
 	}, nil
+}
+
+func (s *AccountService) RefreshToken(token string) (string, error) {
+	refreshToken, err := s.token.ParseRefreshToken(token)
+	if err != nil {
+		logrus.Error(err)
+		return "", ErrAuthentication
+	}
+
+	subject, _ := refreshToken.Claims.GetSubject()
+	access, err := s.token.GenerateAccessToken(subject)
+	if err != nil {
+		logrus.Error(err)
+		return "", fmt.Errorf("%w", err)
+	}
+
+	return access, nil
+}
+
+func (s AccountService) Signup(input model.CreateAccountInput) (*model.ID, error) {
+	found, err := s.repo.Find(&model.AccountFilter{Username: &model.StringFilter{Eq: &input.Username}})
+	if err != nil {
+		logrus.Error(err)
+		return nil, fmt.Errorf("%w", err)
+	}
+	if len(found) != 0 {
+		return nil, ValidationError{
+			Issues: []string{"username already exists"},
+		}
+	}
+
+	if err := s.pwd.ValidatePassword(input.Password); err != nil {
+		var target auth.InvalidPasswordError
+		if errors.As(err, &target) {
+			return nil, ValidationError{
+				Issues: target.Issues,
+			}
+		}
+
+		logrus.Error(err)
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	entity := input.ToEntity(uuid.NewString(), time.Now().UTC())
+	entity.Password, err = s.pwd.GeneratePasswordHash(input.Password)
+	if err != nil {
+		logrus.Error(err)
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	if err := s.repo.Create(entity); err != nil {
+		logrus.Error(err)
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	return &entity.ID, nil
+}
+
+func (s *AccountService) Profile(ctx context.Context) (*model.Account, error) {
+	accountID, ok := AccountIDFromContext(ctx)
+	if !ok {
+		return nil, ErrAuthentication
+	}
+
+	account, err := s.repo.GetOne(accountID.Key)
+	if err != nil {
+		logrus.Error(err)
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	return account, nil
+}
+
+func (s *AccountService) Update(ctx context.Context, input model.UpdateAccountInput) error {
+	accountID, ok := AccountIDFromContext(ctx)
+	if !ok {
+		return ErrAuthentication
+	}
+
+	account, err := s.repo.GetOne(accountID.Key)
+	if err != nil {
+		logrus.Error(err)
+		return fmt.Errorf("%w", err)
+	}
+
+	if input.Password != nil {
+		if err := s.pwd.ValidatePassword(*input.Password); err != nil {
+			var target auth.InvalidPasswordError
+			if errors.As(err, &target) {
+				return ValidationError{
+					Issues: target.Issues,
+				}
+			}
+
+			logrus.Error(err)
+			return fmt.Errorf("%w", err)
+		}
+	}
+
+	input.MergeEntity(account, time.Now().UTC())
+
+	if input.Password != nil {
+		if account.Password, err = s.pwd.GeneratePasswordHash(*input.Password); err != nil {
+			logrus.Error(err)
+			return fmt.Errorf("%w", err)
+		}
+	}
+
+	if err := s.repo.Update(*account); err != nil {
+		logrus.Error(err)
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
+}
+
+func (s *AccountService) Delete(ctx context.Context, id model.ID) error {
+	accountID, ok := AccountIDFromContext(ctx)
+	if !ok {
+		return ErrAuthentication
+	}
+
+	if err := s.repo.Delete(accountID.Key); err != nil {
+		logrus.Error(err)
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
+}
+
+func (s *AccountService) NewContext(ctx context.Context, username string) context.Context {
+	found, err := s.repo.Find(&model.AccountFilter{Username: &model.StringFilter{Eq: &username}})
+	if err != nil {
+		logrus.Error(err)
+		return ctx
+	}
+	if len(found) != 1 {
+		return ctx
+	}
+
+	return context.WithValue(ctx, accountIDContextKey, &found[0].ID)
+}
+
+func AccountIDFromContext(ctx context.Context) (*model.ID, bool) {
+	id, ok := ctx.Value(accountIDContextKey).(*model.ID)
+	if !ok || id == nil {
+		return nil, false
+	}
+
+	return id, true
 }
