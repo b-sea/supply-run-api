@@ -20,12 +20,12 @@ const accountIDContextKey contextKey = "accountID"
 
 type IAccountService interface {
 	Signup(input model.CreateAccountInput) (*model.ID, error)
-	Login(username string, password string) (*model.LoginResult, error)
+	Login(email string, password string) (*model.LoginResult, error)
+	RefreshToken(token string) (string, error)
+	NewContext(ctx context.Context, email string) context.Context
 	Profile(ctx context.Context) (*model.Account, error)
 	Update(ctx context.Context, input model.UpdateAccountInput) error
-	RefreshToken(token string) (string, error)
 	Delete(ctx context.Context, id model.ID) error
-	NewContext(ctx context.Context, username string) context.Context
 }
 
 type AccountConfig struct {
@@ -48,8 +48,8 @@ func NewAccountService(config AccountConfig) *AccountService {
 	}
 }
 
-func (s *AccountService) Login(username string, password string) (*model.LoginResult, error) {
-	found, err := s.repo.Find(&model.AccountFilter{Username: &model.StringFilter{Eq: &username}})
+func (s *AccountService) Login(email string, password string) (*model.LoginResult, error) {
+	found, err := s.repo.Find(&model.AccountFilter{Email: &model.StringFilter{Eq: &email}})
 	if err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
@@ -75,13 +75,13 @@ func (s *AccountService) Login(username string, password string) (*model.LoginRe
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	access, err := s.token.GenerateAccessToken(found[0].Username)
+	access, err := s.token.GenerateAccessToken(found[0].Email)
 	if err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	refresh, err := s.token.GenerateRefreshToken(found[0].Username)
+	refresh, err := s.token.GenerateRefreshToken(found[0].Email)
 	if err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
@@ -111,21 +111,25 @@ func (s *AccountService) RefreshToken(token string) (string, error) {
 }
 
 func (s AccountService) Signup(input model.CreateAccountInput) (*model.ID, error) {
-	found, err := s.repo.Find(&model.AccountFilter{Username: &model.StringFilter{Eq: &input.Username}})
+	if err := input.Validate(); err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	found, err := s.repo.Find(&model.AccountFilter{Email: &model.StringFilter{Eq: &input.Email}})
 	if err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
 	}
 	if len(found) != 0 {
-		return nil, ValidationError{
-			Issues: []string{"username already exists"},
+		return nil, model.ValidationError{
+			Issues: []string{"an account with that email already exists"},
 		}
 	}
 
 	if err := s.pwd.ValidatePassword(input.Password); err != nil {
 		var target auth.InvalidPasswordError
 		if errors.As(err, &target) {
-			return nil, ValidationError{
+			return nil, model.ValidationError{
 				Issues: target.Issues,
 			}
 		}
@@ -176,11 +180,13 @@ func (s *AccountService) Update(ctx context.Context, input model.UpdateAccountIn
 		return fmt.Errorf("%w", err)
 	}
 
+	input.MergeEntity(account, time.Now().UTC())
+
 	if input.Password != nil {
 		if err := s.pwd.ValidatePassword(*input.Password); err != nil {
 			var target auth.InvalidPasswordError
 			if errors.As(err, &target) {
-				return ValidationError{
+				return model.ValidationError{
 					Issues: target.Issues,
 				}
 			}
@@ -188,11 +194,7 @@ func (s *AccountService) Update(ctx context.Context, input model.UpdateAccountIn
 			logrus.Error(err)
 			return fmt.Errorf("%w", err)
 		}
-	}
 
-	input.MergeEntity(account, time.Now().UTC())
-
-	if input.Password != nil {
 		if account.Password, err = s.pwd.GeneratePasswordHash(*input.Password); err != nil {
 			logrus.Error(err)
 			return fmt.Errorf("%w", err)
@@ -221,8 +223,8 @@ func (s *AccountService) Delete(ctx context.Context, id model.ID) error {
 	return nil
 }
 
-func (s *AccountService) NewContext(ctx context.Context, username string) context.Context {
-	found, err := s.repo.Find(&model.AccountFilter{Username: &model.StringFilter{Eq: &username}})
+func (s *AccountService) NewContext(ctx context.Context, email string) context.Context {
+	found, err := s.repo.Find(&model.AccountFilter{Email: &model.StringFilter{Eq: &email}})
 	if err != nil {
 		logrus.Error(err)
 		return ctx

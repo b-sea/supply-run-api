@@ -4,26 +4,26 @@ package local
 import "github.com/b-sea/supply-run-api/internal/model"
 
 type AccountRepo struct {
-	entityRepo[model.Account, model.AccountFilter]
+	nodeRepo[model.Account, model.AccountFilter]
 }
 
 func NewAccountRepo() *AccountRepo {
 	return &AccountRepo{
-		entityRepo: entityRepo[model.Account, model.AccountFilter]{
+		nodeRepo: nodeRepo[model.Account, model.AccountFilter]{
 			filterMatch: accountFilter,
 			data:        make(map[string]*model.Account),
 		},
 	}
 }
 
-func accountFilter(filter *model.AccountFilter, entity *model.Account) bool {
-	if filter == nil || filter.Username == nil {
+func accountFilter(filter *model.AccountFilter, node *model.Account) bool {
+	if filter == nil || filter.Email == nil {
 		return true
 	}
 
 	switch {
-	case filter.Username.Eq != nil:
-		return entity.Username == *filter.Username.Eq
+	case filter.Email.Eq != nil:
+		return node.Email == *filter.Email.Eq
 	default:
 		return false
 	}

@@ -1,16 +1,9 @@
-// Package service implements all business logic for the API.
-package service
+// Package model defines all data entities shared between front end, service, and repository layers.
+package model
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/b-sea/supply-run-api/internal/model"
-)
-
-var (
-	ErrAuthentication = fmt.Errorf("authentication error")
-	ErrAuthorization  = fmt.Errorf("authorization error")
 )
 
 type ValidationError struct {
@@ -22,7 +15,7 @@ func (e ValidationError) Error() string {
 }
 
 type NotFoundError struct {
-	ID model.ID `json:"id"`
+	ID ID `json:"id"`
 }
 
 func (e NotFoundError) Error() string {

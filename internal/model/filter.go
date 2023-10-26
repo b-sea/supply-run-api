@@ -1,6 +1,10 @@
 // Package model defines all data entities shared between front end, service, and repository layers.
 package model
 
+type Filter interface {
+	IsFilter()
+}
+
 // StringFilter defines all properties to filter a string value.
 type StringFilter struct {
 	Eq *string `json:"eq"`

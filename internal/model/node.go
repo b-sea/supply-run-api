@@ -61,19 +61,17 @@ func (m ID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// IEntity defines all functions required on an Entity.
-type IEntity interface {
+// Node defines all functions required on an Entity.
+type Node interface {
 	GetID() ID
 }
 
-// Entity defines all common properties on persisted models.
-type Entity struct {
-	ID        ID        `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+type CreateInput[N Node] interface {
+	Validate() error
+	ToEntity(key string, timestamp time.Time) N
 }
 
-// GetID returns the ID of an Entity.
-func (m Entity) GetID() ID {
-	return m.ID
+type UpdateInput[N Node] interface {
+	Validate() error
+	MergeEntity(N *Node, timestamp time.Time) N
 }

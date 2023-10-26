@@ -28,7 +28,7 @@ linters:
     - testifylint
     - godox
     - nlreturn
-    - wsl
+    - musttag
 
 linters-settings:
   cyclop:

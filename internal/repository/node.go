@@ -3,7 +3,7 @@ package repository
 
 import "github.com/b-sea/supply-run-api/internal/model"
 
-type IEntityRepo[E model.IEntity, F any] interface {
+type NodeRepo[E model.Node, F model.Filter] interface {
 	Find(filter *F) ([]*E, error)
 	GetOne(id string) (*E, error)
 	GetMany(ids []string) ([]*E, error)
@@ -13,5 +13,5 @@ type IEntityRepo[E model.IEntity, F any] interface {
 }
 
 type IAccountRepo interface {
-	IEntityRepo[model.Account, model.AccountFilter]
+	NodeRepo[model.Account, model.AccountFilter]
 }

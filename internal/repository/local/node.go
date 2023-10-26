@@ -6,13 +6,13 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type entityRepo[E model.IEntity, F any] struct {
-	data        map[string]*E
-	filterMatch func(*F, *E) bool
+type nodeRepo[N model.Node, F any] struct {
+	data        map[string]*N
+	filterMatch func(*F, *N) bool
 }
 
-func (r *entityRepo[E, F]) Find(filter *F) ([]*E, error) {
-	result := []*E{}
+func (r *nodeRepo[N, F]) Find(filter *F) ([]*N, error) {
+	result := []*N{}
 	for _, data := range r.data {
 		if !r.filterMatch(filter, data) {
 			continue
@@ -22,12 +22,12 @@ func (r *entityRepo[E, F]) Find(filter *F) ([]*E, error) {
 	return result, nil
 }
 
-func (r *entityRepo[E, F]) GetOne(id string) (*E, error) {
+func (r *nodeRepo[N, F]) GetOne(id string) (*N, error) {
 	return r.data[id], nil
 }
 
-func (r *entityRepo[E, F]) GetMany(ids []string) ([]*E, error) {
-	result := []*E{}
+func (r *nodeRepo[N, F]) GetMany(ids []string) ([]*N, error) {
+	result := []*N{}
 	for id, data := range r.data {
 		if !slices.Contains(ids, id) {
 			continue
@@ -37,17 +37,17 @@ func (r *entityRepo[E, F]) GetMany(ids []string) ([]*E, error) {
 	return result, nil
 }
 
-func (r *entityRepo[E, F]) Create(entity E) error {
-	r.data[entity.GetID().Key] = &entity
+func (r *nodeRepo[N, F]) Create(node N) error {
+	r.data[node.GetID().Key] = &node
 	return nil
 }
 
-func (r *entityRepo[E, F]) Update(entity E) error {
-	r.data[entity.GetID().Key] = &entity
+func (r *nodeRepo[N, F]) Update(node N) error {
+	r.data[node.GetID().Key] = &node
 	return nil
 }
 
-func (r *entityRepo[E, F]) Delete(id string) error {
+func (r *nodeRepo[N, F]) Delete(id string) error {
 	found, err := r.GetOne(id)
 	if err != nil {
 		return err
