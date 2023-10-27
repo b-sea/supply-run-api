@@ -34,13 +34,13 @@ type AccountFilter struct {
 
 func (m AccountFilter) IsFilter() {}
 
-// CreateAccountInput defines all settable properties during account creation.
-type CreateAccountInput struct {
+// SignupInput defines all settable properties during account creation.
+type SignupInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func (m CreateAccountInput) Validate() error {
+func (m SignupInput) Validate() error {
 	issues := make([]string, 0)
 	if _, err := mail.ParseAddress(m.Email); err != nil {
 		issues = append(issues, "invalid email format")
@@ -54,8 +54,8 @@ func (m CreateAccountInput) Validate() error {
 	return nil
 }
 
-// ToEntity converts a CreateAccountInput to an Account entity.
-func (m CreateAccountInput) ToEntity(key string, timestamp time.Time) Account {
+// ToNode converts a SignupInput to an Account node.
+func (m SignupInput) ToNode(key string, timestamp time.Time) Account {
 	return Account{
 		ID: ID{
 			Kind: AccountKind,
@@ -75,18 +75,14 @@ type UpdateAccountInput struct {
 	Password *string `json:"password"`
 }
 
-func (m UpdateAccountInput) Validate() error {
-	return nil
-}
-
-// MergeEntity applies all UpdateAccountInput values to an Account entity.
-func (m UpdateAccountInput) MergeEntity(entity *Account, timestamp time.Time) {
+// MergeNode applies all UpdateAccountInput values to an Account node.
+func (m UpdateAccountInput) MergeNode(node *Account, timestamp time.Time) {
 	if m.Email != nil {
-		entity.Email = *m.Email
-		entity.IsVerified = false
+		node.Email = *m.Email
+		node.IsVerified = false
 	}
 
-	entity.UpdatedAt = timestamp
+	node.UpdatedAt = timestamp
 }
 
 // LoginResult is the response after a successful login.

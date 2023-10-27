@@ -61,17 +61,16 @@ func (m ID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Node defines all functions required on an Entity.
+// Node defines all functions required on an Node.
 type Node interface {
 	GetID() ID
 }
 
 type CreateInput[N Node] interface {
-	Validate() error
-	ToEntity(key string, timestamp time.Time) N
+	ToNode(key string, timestamp time.Time) N
 }
 
 type UpdateInput[N Node] interface {
-	Validate() error
-	MergeEntity(N *Node, timestamp time.Time) N
+	GetID() ID
+	MergeNode(node *N, timestamp time.Time)
 }

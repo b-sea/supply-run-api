@@ -8,7 +8,7 @@ tokens:
   publicKeyPath: 
   privateKeyPath: 
   issuer: "supply-run.auth.service"
-  audience: ""
+  audience: 
   accessTimeout: 900
   refreshTimeout: 2592000
 

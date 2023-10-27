@@ -22,11 +22,11 @@ func (r *nodeRepo[N, F]) Find(filter *F) ([]*N, error) {
 	return result, nil
 }
 
-func (r *nodeRepo[N, F]) GetOne(id string) (*N, error) {
+func (r *nodeRepo[N, F]) GetByID(id string) (*N, error) {
 	return r.data[id], nil
 }
 
-func (r *nodeRepo[N, F]) GetMany(ids []string) ([]*N, error) {
+func (r *nodeRepo[N, F]) GetByIDs(ids []string) ([]*N, error) {
 	result := []*N{}
 	for id, data := range r.data {
 		if !slices.Contains(ids, id) {
@@ -48,15 +48,6 @@ func (r *nodeRepo[N, F]) Update(node N) error {
 }
 
 func (r *nodeRepo[N, F]) Delete(id string) error {
-	found, err := r.GetOne(id)
-	if err != nil {
-		return err
-	}
-
-	if found == nil {
-		return nil
-	}
-
 	delete(r.data, id)
 	return nil
 }

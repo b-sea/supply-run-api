@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/mail"
 	"time"
 
 	"github.com/b-sea/supply-run-api/internal/model"
@@ -18,70 +19,117 @@ type contextKey string
 
 const accountIDContextKey contextKey = "accountID"
 
-type IAccountService interface {
-	Signup(input model.CreateAccountInput) (*model.ID, error)
+type IAccount interface {
+	Signup(input model.SignupInput) error
 	Login(email string, password string) (*model.LoginResult, error)
 	RefreshToken(token string) (string, error)
-	NewContext(ctx context.Context, email string) context.Context
+
 	Profile(ctx context.Context) (*model.Account, error)
 	Update(ctx context.Context, input model.UpdateAccountInput) error
 	Delete(ctx context.Context, id model.ID) error
+
+	NewContext(ctx context.Context, email string) (context.Context, error)
 }
 
 type AccountConfig struct {
 	Password auth.IPasswordService
 	Token    auth.ITokenService
-	Repo     repository.IAccountRepo
+	Repo     repository.IAccount
 }
 
-type AccountService struct {
+type Account struct {
 	pwd   auth.IPasswordService
 	token auth.ITokenService
-	repo  repository.IAccountRepo
+	repo  repository.IAccount
 }
 
-func NewAccountService(config AccountConfig) *AccountService {
-	return &AccountService{
+func NewAccount(config AccountConfig) *Account {
+	return &Account{
 		pwd:   config.Password,
 		token: config.Token,
 		repo:  config.Repo,
 	}
 }
 
-func (s *AccountService) Login(email string, password string) (*model.LoginResult, error) {
-	found, err := s.repo.Find(&model.AccountFilter{Email: &model.StringFilter{Eq: &email}})
+func (s Account) Signup(input model.SignupInput) error {
+	if _, err := mail.ParseAddress(input.Email); err != nil {
+		return model.ValidationError{
+			Issues: []string{"invalid email format"},
+		}
+	}
+
+	found, err := s.repo.GetByEmail(input.Email)
+	if err != nil {
+		logrus.Error(err)
+		return fmt.Errorf("%w", err)
+	}
+	if found != nil {
+		return model.ValidationError{
+			Issues: []string{"an account with that email already exists"},
+		}
+	}
+
+	if err := s.pwd.ValidatePassword(input.Password); err != nil {
+		var target auth.InvalidPasswordError
+		if errors.As(err, &target) {
+			return model.ValidationError{
+				Issues: target.Issues,
+			}
+		}
+
+		logrus.Error(err)
+		return fmt.Errorf("%w", err)
+	}
+
+	account := input.ToNode(uuid.NewString(), time.Now().UTC())
+	account.Password, err = s.pwd.GeneratePasswordHash(input.Password)
+	if err != nil {
+		logrus.Error(err)
+		return fmt.Errorf("%w", err)
+	}
+
+	if err := s.repo.Create(account); err != nil {
+		logrus.Error(err)
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
+}
+
+func (s *Account) Login(email string, password string) (*model.LoginResult, error) {
+	found, err := s.repo.GetByEmail(email)
 	if err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if len(found) != 1 {
+	if found != nil {
 		return nil, ErrAuthentication
 	}
 
-	if ok, err := s.pwd.VerifyPassword(password, found[0].Password); !ok || err != nil {
+	if ok, err := s.pwd.VerifyPassword(password, found.Password); !ok || err != nil {
 		return nil, ErrAuthentication
 	}
 
 	now := time.Now().UTC()
-	found[0].LastLogin = &now
-	found[0].Password, err = s.pwd.GeneratePasswordHash(password)
+	found.LastLogin = &now
+	found.Password, err = s.pwd.GeneratePasswordHash(password)
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err = s.repo.Update(*found[0]); err != nil {
+	if err = s.repo.Update(*found); err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	access, err := s.token.GenerateAccessToken(found[0].Email)
+	access, err := s.token.GenerateAccessToken(found.Email)
 	if err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	refresh, err := s.token.GenerateRefreshToken(found[0].Email)
+	refresh, err := s.token.GenerateRefreshToken(found.Email)
 	if err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
@@ -93,7 +141,7 @@ func (s *AccountService) Login(email string, password string) (*model.LoginResul
 	}, nil
 }
 
-func (s *AccountService) RefreshToken(token string) (string, error) {
+func (s *Account) RefreshToken(token string) (string, error) {
 	refreshToken, err := s.token.ParseRefreshToken(token)
 	if err != nil {
 		logrus.Error(err)
@@ -110,77 +158,38 @@ func (s *AccountService) RefreshToken(token string) (string, error) {
 	return access, nil
 }
 
-func (s AccountService) Signup(input model.CreateAccountInput) (*model.ID, error) {
-	if err := input.Validate(); err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	found, err := s.repo.Find(&model.AccountFilter{Email: &model.StringFilter{Eq: &input.Email}})
-	if err != nil {
-		logrus.Error(err)
-		return nil, fmt.Errorf("%w", err)
-	}
-	if len(found) != 0 {
-		return nil, model.ValidationError{
-			Issues: []string{"an account with that email already exists"},
-		}
-	}
-
-	if err := s.pwd.ValidatePassword(input.Password); err != nil {
-		var target auth.InvalidPasswordError
-		if errors.As(err, &target) {
-			return nil, model.ValidationError{
-				Issues: target.Issues,
-			}
-		}
-
-		logrus.Error(err)
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	entity := input.ToEntity(uuid.NewString(), time.Now().UTC())
-	entity.Password, err = s.pwd.GeneratePasswordHash(input.Password)
-	if err != nil {
-		logrus.Error(err)
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	if err := s.repo.Create(entity); err != nil {
-		logrus.Error(err)
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	return &entity.ID, nil
-}
-
-func (s *AccountService) Profile(ctx context.Context) (*model.Account, error) {
+func (s *Account) Profile(ctx context.Context) (*model.Account, error) {
 	accountID, ok := AccountIDFromContext(ctx)
 	if !ok {
 		return nil, ErrAuthentication
 	}
 
-	account, err := s.repo.GetOne(accountID.Key)
+	account, err := s.repo.GetByID(accountID.Key)
 	if err != nil {
 		logrus.Error(err)
 		return nil, fmt.Errorf("%w", err)
 	}
 
+	if account == nil {
+		return nil, model.NotFoundError{ID: *accountID}
+	}
+
 	return account, nil
 }
 
-func (s *AccountService) Update(ctx context.Context, input model.UpdateAccountInput) error {
+func (s *Account) Update(ctx context.Context, input model.UpdateAccountInput) error {
 	accountID, ok := AccountIDFromContext(ctx)
 	if !ok {
 		return ErrAuthentication
 	}
 
-	account, err := s.repo.GetOne(accountID.Key)
+	account, err := s.repo.GetByID(accountID.Key)
 	if err != nil {
 		logrus.Error(err)
 		return fmt.Errorf("%w", err)
 	}
 
-	input.MergeEntity(account, time.Now().UTC())
+	input.MergeNode(account, time.Now().UTC())
 
 	if input.Password != nil {
 		if err := s.pwd.ValidatePassword(*input.Password); err != nil {
@@ -209,7 +218,7 @@ func (s *AccountService) Update(ctx context.Context, input model.UpdateAccountIn
 	return nil
 }
 
-func (s *AccountService) Delete(ctx context.Context, id model.ID) error {
+func (s *Account) Delete(ctx context.Context, id model.ID) error {
 	accountID, ok := AccountIDFromContext(ctx)
 	if !ok {
 		return ErrAuthentication
@@ -223,17 +232,20 @@ func (s *AccountService) Delete(ctx context.Context, id model.ID) error {
 	return nil
 }
 
-func (s *AccountService) NewContext(ctx context.Context, email string) context.Context {
-	found, err := s.repo.Find(&model.AccountFilter{Email: &model.StringFilter{Eq: &email}})
+func (s *Account) NewContext(ctx context.Context, email string) (context.Context, error) {
+	found, err := s.repo.GetByEmail(email)
 	if err != nil {
 		logrus.Error(err)
-		return ctx
+		return ctx, fmt.Errorf("%w", err)
 	}
-	if len(found) != 1 {
-		return ctx
+	if found == nil {
+		return ctx, ErrAuthentication
+	}
+	if !found.IsVerified {
+		return ctx, model.ValidationError{Issues: []string{"account not verified"}}
 	}
 
-	return context.WithValue(ctx, accountIDContextKey, &found[0].ID)
+	return context.WithValue(ctx, accountIDContextKey, &found.ID), nil
 }
 
 func AccountIDFromContext(ctx context.Context) (*model.ID, bool) {
