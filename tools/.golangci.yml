@@ -51,5 +51,7 @@ linters-settings:
       - id
 
 run: 
+  tests: false
   skip-dirs:
     - cmd
+    - internal

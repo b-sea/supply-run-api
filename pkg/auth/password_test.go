@@ -37,23 +37,33 @@ func TestPasswordServiceValidatePassword(t *testing.T) {
 		},
 		"missing uppercase": {
 			password: "p@ssw0rd",
-			err:      auth.InvalidPasswordError{},
+			err: auth.InvalidPasswordError{
+				Issues: []string{"at least one uppercase character required"},
+			},
 		},
 		"missing lowercase": {
 			password: "P@SSW0RD",
-			err:      auth.InvalidPasswordError{},
+			err: auth.InvalidPasswordError{
+				Issues: []string{"at least one lowercase character required"},
+			},
 		},
 		"missing number": {
 			password: "P@ssword",
-			err:      auth.InvalidPasswordError{},
+			err: auth.InvalidPasswordError{
+				Issues: []string{"at least one numeric character required"},
+			},
 		},
 		"missing special": {
 			password: "Passw0rd",
-			err:      auth.InvalidPasswordError{},
+			err: auth.InvalidPasswordError{
+				Issues: []string{"at least one special character required"},
+			},
 		},
 		"too short": {
 			password: "Pwd0!",
-			err:      auth.InvalidPasswordError{},
+			err: auth.InvalidPasswordError{
+				Issues: []string{"password must be at least 8 characters"},
+			},
 		},
 	}
 
@@ -78,7 +88,7 @@ func TestPasswordServiceValidatePassword(t *testing.T) {
 			if testCase.err == nil {
 				assert.NoError(t, err, "no error expected")
 			} else {
-				assert.ErrorAs(t, err, &testCase.err, "different errors")
+				assert.EqualError(t, err, testCase.err.Error(), "different errors")
 			}
 		})
 	}
@@ -157,6 +167,7 @@ func TestPasswordServiceGeneratePasswordHash(t *testing.T) {
 
 	type test struct {
 		encryptRepo auth.IEncryptRepo
+		maxLength   int
 		password    string
 		result      string
 		err         error
@@ -177,6 +188,14 @@ func TestPasswordServiceGeneratePasswordHash(t *testing.T) {
 			password: "this is a really long password, how are you today? i'm doing fine, thanks for asking.",
 			result:   "1a2b3c4d",
 		},
+		"truncated length": {
+			encryptRepo: &MockEncryptRepo{
+				GenerateResult: "1a2b3c4d",
+			},
+			maxLength: 20,
+			password:  "blah blah blah blah blah blah blah blah blah blah",
+			result:    "1a2b3c4d",
+		},
 		"error": {
 			encryptRepo: &MockEncryptRepo{
 				GenerateErr: errors.New("some hash error"),
@@ -192,7 +211,7 @@ func TestPasswordServiceGeneratePasswordHash(t *testing.T) {
 		config := auth.PasswordConfig{
 			EncryptRepo:    testCase.encryptRepo,
 			MinLength:      8,
-			MaxLength:      20,
+			MaxLength:      testCase.maxLength,
 			RequireUpper:   true,
 			RequireLower:   true,
 			RequireNumber:  true,

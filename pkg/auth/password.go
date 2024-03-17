@@ -14,7 +14,7 @@ type InvalidPasswordError struct {
 }
 
 func (e InvalidPasswordError) Error() string {
-	return fmt.Sprintf("invalid password: %s", strings.Join(e.Issues, ", "))
+	return "invalid password: " + strings.Join(e.Issues, ", ")
 }
 
 // IPasswordService defines all functions required for managing passwords.
