@@ -154,7 +154,6 @@ func (s *TokenService) parseToken(tokenString string, tokenTypAud tokenType) (*j
 		},
 		options...,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
