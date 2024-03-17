@@ -10,7 +10,6 @@ issues:
         - funlen
         - goerr113
 
-
 linters:
   enable-all: true
   disable:
@@ -29,6 +28,7 @@ linters:
     - testifylint
     - godox
     - nlreturn
+    - musttag
 
 linters-settings:
   cyclop:
@@ -39,10 +39,19 @@ linters-settings:
     case:
       use-field-name: true
       rules:
-        json: snake
-        yaml: snake
+        json: camel
+        yaml: camel
+        mapstructure: camel
 
   varnamelen:
     ignore-type-assert-ok: true
     ignore-map-ok: true
     ignore-chan-recv-ok: true
+    ignore-names:
+      - id
+
+run: 
+  tests: false
+  skip-dirs:
+    - cmd
+    - internal
