@@ -189,7 +189,7 @@ func NewUnit(input NewUnitInput) (*Unit, error) {
 		id:        input.ID(),
 		createdAt: input.Now().UTC(),
 		owner:     input.Owner,
-		name:      input.Symbol,
+		name:      input.Name,
 		siType:    input.Type,
 		symbol:    input.Symbol,
 		system:    input.System,
