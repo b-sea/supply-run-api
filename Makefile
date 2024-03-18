@@ -23,5 +23,4 @@ test:
 	@go test -coverprofile=./.test/coverage.out ./...
 
 lint:
-	@golangci-lint run -c tools/.golangci.yml
-
+	@golangci-lint run -c tools/.golangci.yml ./...
