@@ -18,9 +18,10 @@ func main() {
 		memory.NewUnitRepository(
 			unitCatalog(owner, configs.LoadDefaults()),
 		),
+		cookbook.WithBaseUser(owner),
 	)
 
-	foundUnits, err := units.GetUnits([]uuid.UUID{owner})
+	foundUnits, err := units.FindUnits(nil)
 	if err != nil {
 		logrus.Fatal(err)
 	}

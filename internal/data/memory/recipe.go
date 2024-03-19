@@ -50,6 +50,12 @@ func (r *RecipeRepository) isValid(entity *recipe.Recipe, filter *recipe.Filter)
 		return true
 	}
 
+	if filter.Owners != nil {
+		if !slices.Contains(filter.Owners, entity.Owner()) {
+			return false
+		}
+	}
+
 	if filter.Name != nil {
 		if !strings.Contains(entity.Name, *filter.Name) {
 			return false
@@ -65,15 +71,11 @@ func (r *RecipeRepository) isValid(entity *recipe.Recipe, filter *recipe.Filter)
 	return true
 }
 
-// Find all recipes based on the given owners and filters.
-func (r *RecipeRepository) Find(owners []uuid.UUID, filter *recipe.Filter) ([]*recipe.Recipe, error) {
+// Find searches for recipes.
+func (r *RecipeRepository) Find(filter *recipe.Filter) ([]*recipe.Recipe, error) {
 	results := []*recipe.Recipe{}
 
 	for _, entity := range r.recipes {
-		if !slices.Contains(owners, entity.Owner()) {
-			continue
-		}
-
 		if !r.isValid(entity, filter) {
 			continue
 		}
@@ -85,15 +87,9 @@ func (r *RecipeRepository) Find(owners []uuid.UUID, filter *recipe.Filter) ([]*r
 }
 
 // GetOne recipe.
-func (r *RecipeRepository) GetOne(owners []uuid.UUID, id uuid.UUID) (*recipe.Recipe, error) {
+func (r *RecipeRepository) GetOne(id uuid.UUID) (*recipe.Recipe, error) {
 	found := r.recipes[id]
 	if found == nil {
-		return nil, &entity.NotFoundError{
-			ID: id,
-		}
-	}
-
-	if !slices.Contains(owners, found.Owner()) {
 		return nil, &entity.NotFoundError{
 			ID: id,
 		}

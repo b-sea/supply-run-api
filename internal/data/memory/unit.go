@@ -26,16 +26,38 @@ func NewUnitRepository(units []*unit.Unit) *UnitRepository {
 	return &result
 }
 
-// GetByOwnerIDs finds all units based on the given owner.
-func (r *UnitRepository) GetByOwnerIDs(ids []uuid.UUID) ([]*unit.Unit, error) {
+func (r *UnitRepository) isValid(entity *unit.Unit, filter *unit.Filter) bool {
+	if filter == nil {
+		return true
+	}
+
+	if filter.Owners != nil {
+		if !slices.Contains(filter.Owners, entity.Owner()) {
+			return false
+		}
+	}
+
+	if filter.System != nil {
+		return filter.System == &entity.System
+	}
+
+	if filter.Type != nil {
+		return filter.Type == &entity.Type
+	}
+
+	return true
+}
+
+// Find searches for units.
+func (r *UnitRepository) Find(filter *unit.Filter) ([]*unit.Unit, error) {
 	results := []*unit.Unit{}
 
-	for _, v := range r.units {
-		if !slices.Contains(ids, v.Owner()) {
+	for _, entity := range r.units {
+		if !r.isValid(entity, filter) {
 			continue
 		}
 
-		results = append(results, v)
+		results = append(results, entity)
 	}
 
 	return results, nil
