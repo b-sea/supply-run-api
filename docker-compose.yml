@@ -1,9 +1,0 @@
-services:
-  couchbase:
-    image: couchbase:community-7.2.0
-    ports:
-      - 8091-8097:8091-8097
-      - 9123:9123
-      - 9140:9140
-      - 11210:11210
-      - 11280:11280
