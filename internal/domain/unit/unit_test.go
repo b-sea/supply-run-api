@@ -9,149 +9,60 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// func TestUnitCreate(t *testing.T) {
-// 	t.Parallel()
-
-// 	admin := uuid.New()
-
-// 	imperial, err := unit.NewSystem(
-// 		unit.NewSystemInput{
-// 			Owner: admin,
-// 			Name:  "imperial",
-// 		},
-// 	)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	logrus.Infof("%+v", imperial)
-
-// 	metric, err := unit.NewSystem(
-// 		unit.NewSystemInput{
-// 			Owner: admin,
-// 			Name:  "metric",
-// 		},
-// 	)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	logrus.Infof("%+v", metric)
-
-// 	volume, err := unit.NewType(
-// 		unit.NewTypeInput{
-// 			Owner: admin,
-// 			Name:  "volume",
-// 		},
-// 	)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	logrus.Infof("%+v", volume)
-
-// 	mass, err := unit.NewType(
-// 		unit.NewTypeInput{
-// 			Owner: admin,
-// 			Name:  "mass",
-// 		},
-// 	)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	logrus.Infof("%+v", mass)
-
-// 	ml, err := unit.NewUnit(
-// 		unit.NewUnitInput{
-// 			Owner:  admin,
-// 			Name:   "millilitre",
-// 			Symbol: "ml",
-// 			System: *metric,
-// 			Type:   *volume,
-// 		},
-// 	)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	logrus.Infof("%+v", ml)
-
-// 	tsp, err := unit.NewUnit(
-// 		unit.NewUnitInput{
-// 			Owner:  admin,
-// 			Name:   "teaspoon",
-// 			Symbol: "tsp",
-// 			System: *imperial,
-// 			Type:   *volume,
-// 			ConvertFrom: &unit.ConversionInput{
-// 				Unit:  *ml,
-// 				Ratio: 4.929,
-// 			},
-// 		},
-// 	)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	logrus.Infof("%+v", tsp)
-
-// 	tbsp, err := unit.NewUnit(
-// 		unit.NewUnitInput{
-// 			Owner:  admin,
-// 			Name:   "tablespoon",
-// 			Symbol: "tbsp",
-// 			System: *imperial,
-// 			Type:   *volume,
-// 			ConvertFrom: &unit.ConversionInput{
-// 				Unit:  *tsp,
-// 				Ratio: 2,
-// 			},
-// 		},
-// 	)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	logrus.Infof("%+v", tbsp)
-// }
-
 func TestUnitNewUnit(t *testing.T) {
 	t.Parallel()
 
-	generated_id := uuid.New()
-	idFunc := func() uuid.UUID {
-		return generated_id
-	}
-	timestamp := time.Now
+	id := uuid.New()
 	owner := uuid.New()
+	now := time.Now()
 
-	newSystem, _ := unit.NewSystem(
-		unit.NewSystemInput{
-			Owner: owner,
-			Name:  "imperial",
-		},
+	testUnit := unit.NewUnit(
+		"custom unit",
+		owner,
+		unit.WithID(id),
+		unit.WithTimestamp(now),
+		unit.WithSymbol("cu"),
+		unit.WithSystem(unit.MetricSystem),
+		unit.WithType(unit.VolumeType),
 	)
 
-	newType, _ := unit.NewType(
-		unit.NewTypeInput{
-			Owner: owner,
-			Name:  "mass",
-		},
-	)
+	assert.Equal(t, id, testUnit.ID())
+	assert.Equal(t, now, testUnit.CreatedAt())
+	assert.Equal(t, owner, testUnit.Owner())
+	assert.Equal(t, "custom unit", testUnit.Name)
+	assert.Equal(t, "cu", testUnit.Symbol)
+	assert.Equal(t, unit.VolumeType, testUnit.Type)
+	assert.Equal(t, unit.MetricSystem, testUnit.System)
+}
 
-	newUnit, err := unit.NewUnit(
-		unit.NewUnitInput{
-			ID:     idFunc,
-			Now:    timestamp,
-			Owner:  owner,
-			Name:   "firkin",
-			Symbol: "fk",
-			Type:   *newType,
-			System: *newSystem,
-		},
-	)
+func TestUnitValidate(t *testing.T) {
+	t.Parallel()
+
+	testUnit := unit.NewUnit("", uuid.New())
+	err := testUnit.Validate()
+
+	assert.EqualError(t, err, "validation errors: name cannot be empty")
+
+	testUnit = unit.NewUnit("custom unit", uuid.New())
+	err = testUnit.Validate()
 
 	assert.NoError(t, err)
-	assert.Equal(t, idFunc(), newUnit.ID())
-	assert.Equal(t, timestamp().UTC(), newUnit.CreatedAt())
-	assert.Nil(t, newUnit.UpdatedAt())
-	assert.Equal(t, owner, newUnit.Owner())
-	assert.Equal(t, "firkin", newUnit.Name())
-	assert.Equal(t, "fk", newUnit.Symbol())
-	assert.Equal(t, *newType, newUnit.Type())
-	assert.Equal(t, *newSystem, newUnit.System())
+}
+
+func TestUnitEnum(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, unit.ImperialSystem, unit.SystemFromString("IMPERIAL"))
+	assert.Equal(t, "IMPERIAL", unit.ImperialSystem.String())
+	assert.Equal(t, unit.MetricSystem, unit.SystemFromString("METRIC"))
+	assert.Equal(t, "METRIC", unit.MetricSystem.String())
+	assert.Equal(t, unit.NoSystem, unit.SystemFromString("SOMETHING ELSE"))
+	assert.Equal(t, "", unit.NoSystem.String())
+
+	assert.Equal(t, unit.MassType, unit.TypeFromString("MASS"))
+	assert.Equal(t, "MASS", unit.MassType.String())
+	assert.Equal(t, unit.VolumeType, unit.TypeFromString("VOLUME"))
+	assert.Equal(t, "VOLUME", unit.VolumeType.String())
+	assert.Equal(t, unit.NoType, unit.TypeFromString("SOMETHING ELSE"))
+	assert.Equal(t, "", unit.NoType.String())
 }

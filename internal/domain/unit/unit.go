@@ -8,13 +8,75 @@ import (
 	"github.com/google/uuid"
 )
 
-type (
-	// UUIDFunc is a function to generate an uuid.
-	UUIDFunc func() uuid.UUID
+// Type is a base or derived SI measurment types.
+type Type int
 
-	// TimeFunc is a function to generate a timestamp.
-	TimeFunc func() time.Time
+// NoType et all are the different SI types.
+const (
+	NoType Type = iota
+	MassType
+	VolumeType
 )
+
+func (t Type) String() string {
+	switch t {
+	case MassType:
+		return "MASS"
+	case VolumeType:
+		return "VOLUME"
+	case NoType:
+		fallthrough
+	default:
+		return ""
+	}
+}
+
+// TypeFromString converts a string to a SI type.
+func TypeFromString(s string) Type {
+	switch s {
+	case "MASS":
+		return MassType
+	case "VOLUME":
+		return VolumeType
+	default:
+		return NoType
+	}
+}
+
+// System is a measurement system.
+type System int
+
+// NoSystem et all are the different measurement systems.
+const (
+	NoSystem System = iota
+	ImperialSystem
+	MetricSystem
+)
+
+func (s System) String() string {
+	switch s {
+	case ImperialSystem:
+		return "IMPERIAL"
+	case MetricSystem:
+		return "METRIC"
+	case NoSystem:
+		fallthrough
+	default:
+		return ""
+	}
+}
+
+// SystemFromString converts a string to a measurement system.
+func SystemFromString(s string) System {
+	switch s {
+	case "IMPERIAL":
+		return ImperialSystem
+	case "METRIC":
+		return MetricSystem
+	default:
+		return NoSystem
+	}
+}
 
 // ValidationError is raised when validation fails.
 type ValidationError struct {
@@ -25,29 +87,15 @@ func (e *ValidationError) Error() string {
 	return "validation errors: " + strings.Join(e.Issues, ", ")
 }
 
-// Conversion is a ratioed relationship between units.
-type Conversion struct {
-	unit  Unit
-	ratio float32
-}
-
-// ConversionInput is used to build a ratioed relationship between units.
-type ConversionInput struct {
-	Unit  Unit
-	Ratio float32
-}
-
 // Unit is a unit of measurement.
 type Unit struct {
-	id          uuid.UUID
-	createdAt   time.Time
-	updatedAt   *time.Time
-	owner       uuid.UUID
-	name        string
-	symbol      string
-	siType      Type
-	system      System
-	convertFrom *Conversion
+	id        uuid.UUID
+	createdAt time.Time
+	owner     uuid.UUID
+	Name      string
+	Symbol    string
+	Type      Type
+	System    System
 }
 
 // ID returns the id of a unit.
@@ -60,151 +108,81 @@ func (u *Unit) CreatedAt() time.Time {
 	return u.createdAt
 }
 
-// UpdatedAt returns a timestamp when the unit was updated.
-func (u *Unit) UpdatedAt() *time.Time {
-	return u.updatedAt
-}
-
 // Owner returns the creator of the unit.
 func (u *Unit) Owner() uuid.UUID {
 	return u.owner
 }
 
-// Name returns the unit name.
-func (u *Unit) Name() string {
-	return u.name
-}
-
-// Symbol returns the unit symbol/shortname.
-func (u *Unit) Symbol() string {
-	return u.symbol
-}
-
-// Type returns the unit SI type.
-func (u *Unit) Type() Type {
-	return u.siType
-}
-
-// System returns the unit measurement system.
-func (u *Unit) System() System {
-	return u.system
-}
-
-func (u *Unit) validate() error {
+// Validate the unit.
+func (u *Unit) Validate() error {
 	issues := []string{}
 
-	if u.name == "" {
+	if u.Name == "" {
 		issues = append(issues, "name cannot be empty")
 	}
 
-	if u.convertFrom != nil {
-		if u.id == u.convertFrom.unit.id {
-			issues = append(issues, "cannot convert from self")
-		}
+	if len(issues) == 0 {
+		return nil
 	}
 
-	if len(issues) > 0 {
-		return &ValidationError{
-			Issues: issues,
-		}
+	return &ValidationError{
+		Issues: issues,
 	}
-
-	return nil
 }
 
-// UpdateUnitInput is used to update an existing unit.
-type UpdateUnitInput struct {
-	Now          TimeFunc
-	Name         *string
-	Symbol       *string
-	Type         *Type
-	System       *System
-	ConvertFrom  *Conversion
-	ClearConvert bool
+// Option is a unit creation option.
+type Option func(*Unit)
+
+// WithID sets the unit id.
+func WithID(id uuid.UUID) Option {
+	return func(u *Unit) {
+		u.id = id
+	}
 }
 
-// Update and validate an existing unit.
-func (u *Unit) Update(input UpdateUnitInput) error {
-	if input.Now == nil {
-		input.Now = time.Now
+// WithTimestamp sets the unit creation time.
+func WithTimestamp(now time.Time) Option {
+	return func(u *Unit) {
+		u.createdAt = now
 	}
-
-	now := input.Now().UTC()
-	u.updatedAt = &now
-
-	if input.Name != nil {
-		u.name = *input.Name
-	}
-
-	if input.Symbol != nil {
-		u.symbol = *input.Symbol
-	}
-
-	if input.System != nil {
-		u.symbol = *input.Symbol
-	}
-
-	if input.Type != nil {
-		u.siType = *input.Type
-	}
-
-	if input.ConvertFrom != nil {
-		u.convertFrom = input.ConvertFrom
-	}
-
-	if input.ClearConvert {
-		u.convertFrom = nil
-	}
-
-	if err := u.validate(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
-// NewUnitInput is used to create a new unit.
-type NewUnitInput struct {
-	ID          UUIDFunc
-	Now         TimeFunc
-	Owner       uuid.UUID
-	Name        string
-	Symbol      string
-	Type        Type
-	System      System
-	ConvertFrom *ConversionInput
+// WithSymbol sets the unit symbol.
+func WithSymbol(symbol string) Option {
+	return func(u *Unit) {
+		u.Symbol = symbol
+	}
 }
 
-// NewUnit creates and validates a new unit.
-func NewUnit(input NewUnitInput) (*Unit, error) {
-	if input.ID == nil {
-		input.ID = uuid.New
+// WithSystem sets the unit measurment system.
+func WithSystem(system System) Option {
+	return func(u *Unit) {
+		u.System = system
+	}
+}
+
+// WithType sets the unit SI type.
+func WithType(siType Type) Option {
+	return func(u *Unit) {
+		u.Type = siType
+	}
+}
+
+// NewUnit creates a new unit.
+func NewUnit(name string, owner uuid.UUID, opts ...Option) *Unit {
+	result := &Unit{
+		id:        uuid.New(),
+		createdAt: time.Now().UTC(),
+		owner:     owner,
+		Name:      name,
+		Symbol:    "",
+		Type:      NoType,
+		System:    NoSystem,
 	}
 
-	if input.Now == nil {
-		input.Now = time.Now
+	for _, opt := range opts {
+		opt(result)
 	}
 
-	result := Unit{
-		id:        input.ID(),
-		createdAt: input.Now().UTC(),
-		owner:     input.Owner,
-		name:      input.Name,
-		siType:    input.Type,
-		symbol:    input.Symbol,
-		system:    input.System,
-	}
-
-	if input.ConvertFrom != nil {
-		result.convertFrom = &Conversion{
-			unit:  input.ConvertFrom.Unit,
-			ratio: input.ConvertFrom.Ratio,
-		}
-	}
-
-	if err := result.validate(); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+	return result
 }
