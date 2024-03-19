@@ -24,4 +24,3 @@ test:
 
 lint:
 	@golangci-lint run -c tools/.golangci.yml
-

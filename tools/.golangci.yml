@@ -2,13 +2,6 @@ issues:
   max-per-linter: 0
   max-same-issues: 0
   exclude-use-default: false
-  exclude-rules:
-    - path: (.+)_test.go
-      linters:
-        - dupl
-        - gosec
-        - funlen
-        - goerr113
 
 linters:
   enable-all: true
@@ -29,6 +22,7 @@ linters:
     - godox
     - nlreturn
     - musttag
+    - dupl
 
 linters-settings:
   cyclop:
@@ -52,6 +46,3 @@ linters-settings:
 
 run: 
   tests: false
-  skip-dirs:
-    - cmd
-    - internal
