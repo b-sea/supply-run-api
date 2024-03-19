@@ -4,6 +4,7 @@ package main
 import (
 	"github.com/b-sea/supply-run-api/configs"
 	"github.com/b-sea/supply-run-api/internal/data/memory"
+	"github.com/b-sea/supply-run-api/internal/domain/recipe"
 	"github.com/b-sea/supply-run-api/internal/domain/unit"
 	"github.com/b-sea/supply-run-api/internal/service/cookbook"
 	"github.com/google/uuid"
@@ -13,6 +14,7 @@ import (
 func main() {
 	owner := uuid.New()
 	units := cookbook.NewService(
+		memory.NewRecipeRepository([]*recipe.Recipe{}),
 		memory.NewUnitRepository(
 			unitCatalog(owner, configs.LoadDefaults()),
 		),

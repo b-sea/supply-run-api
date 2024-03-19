@@ -2,6 +2,7 @@
 package recipe
 
 import (
+	"github.com/b-sea/supply-run-api/internal/entity"
 	"github.com/google/uuid"
 )
 
@@ -45,7 +46,7 @@ func (i *Ingredient) Validate() error {
 		return nil
 	}
 
-	return &ValidationError{
+	return &entity.ValidationError{
 		Issues: issues,
 	}
 }

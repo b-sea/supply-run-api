@@ -1,7 +1,10 @@
 // Package recipe defines everything to manage the recipes domain.
 package recipe
 
-import "github.com/google/uuid"
+import (
+	"github.com/b-sea/supply-run-api/internal/entity"
+	"github.com/google/uuid"
+)
 
 // TagOption is a tag creation option.
 type TagOption func(*Tag)
@@ -41,7 +44,7 @@ func (t *Tag) Validate() error {
 		return nil
 	}
 
-	return &ValidationError{
+	return &entity.ValidationError{
 		Issues: issues,
 	}
 }

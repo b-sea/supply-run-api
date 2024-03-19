@@ -4,6 +4,7 @@ package cookbook
 import (
 	"fmt"
 
+	"github.com/b-sea/supply-run-api/internal/domain/recipe"
 	"github.com/b-sea/supply-run-api/internal/domain/unit"
 	"github.com/google/uuid"
 )
@@ -13,13 +14,15 @@ type Config func(*Service) error
 
 // Service is a cookbook service.
 type Service struct {
-	units unit.Repository
+	recipes recipe.Repository
+	units   unit.Repository
 }
 
 // NewService creates a new cookbook service.
-func NewService(units unit.Repository) *Service {
+func NewService(recipes recipe.Repository, units unit.Repository) *Service {
 	return &Service{
-		units: units,
+		recipes: recipes,
+		units:   units,
 	}
 }
 

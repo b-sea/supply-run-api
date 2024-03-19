@@ -2,20 +2,11 @@
 package recipe
 
 import (
-	"strings"
 	"time"
 
+	"github.com/b-sea/supply-run-api/internal/entity"
 	"github.com/google/uuid"
 )
-
-// ValidationError is raised when validation fails.
-type ValidationError struct {
-	Issues []string
-}
-
-func (e *ValidationError) Error() string {
-	return "validation errors: " + strings.Join(e.Issues, ", ")
-}
 
 // Option is a recipe creation option.
 type Option func(*Recipe)
@@ -56,21 +47,21 @@ func WithServings(servings int) Option {
 }
 
 // WithIngredients sets the recipe ingredients.
-func WithIngredients(ingredients []Ingredient) Option {
+func WithIngredients(ingredients []*Ingredient) Option {
 	return func(r *Recipe) {
 		r.Ingredients = ingredients
 	}
 }
 
 // WithSteps sets the recipe steps.
-func WithSteps(steps []Step) Option {
+func WithSteps(steps []*Step) Option {
 	return func(r *Recipe) {
 		r.Steps = steps
 	}
 }
 
 // WithTags sets the recipe tags.
-func WithTags(tags []Tag) Option {
+func WithTags(tags []*Tag) Option {
 	return func(r *Recipe) {
 		r.Tags = tags
 	}
@@ -85,9 +76,9 @@ type Recipe struct {
 	Description string
 	URL         string
 	Servings    int
-	Ingredients []Ingredient
-	Steps       []Step
-	Tags        []Tag
+	Ingredients []*Ingredient
+	Steps       []*Step
+	Tags        []*Tag
 }
 
 // ID returns the recipe id.
@@ -117,7 +108,7 @@ func (r *Recipe) Validate() error {
 		return nil
 	}
 
-	return &ValidationError{
+	return &entity.ValidationError{
 		Issues: issues,
 	}
 }

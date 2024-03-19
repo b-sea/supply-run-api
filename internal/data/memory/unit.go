@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// UnitRepository implements the unit domain repository.
+// UnitRepository implements the unit domain.
 type UnitRepository struct {
 	units map[uuid.UUID]*unit.Unit
 }
