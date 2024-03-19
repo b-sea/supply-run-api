@@ -2,9 +2,9 @@
 package unit
 
 import (
-	"strings"
 	"time"
 
+	"github.com/b-sea/supply-run-api/internal/entity"
 	"github.com/google/uuid"
 )
 
@@ -78,13 +78,42 @@ func SystemFromString(s string) System {
 	}
 }
 
-// ValidationError is raised when validation fails.
-type ValidationError struct {
-	Issues []string
+// Option is a unit creation option.
+type Option func(*Unit)
+
+// WithID sets the unit id.
+func WithID(id uuid.UUID) Option {
+	return func(u *Unit) {
+		u.id = id
+	}
 }
 
-func (e *ValidationError) Error() string {
-	return "validation errors: " + strings.Join(e.Issues, ", ")
+// WithTimestamp sets the unit creation time.
+func WithTimestamp(now time.Time) Option {
+	return func(u *Unit) {
+		u.createdAt = now
+	}
+}
+
+// WithSymbol sets the unit symbol.
+func WithSymbol(symbol string) Option {
+	return func(u *Unit) {
+		u.Symbol = symbol
+	}
+}
+
+// WithSystem sets the unit measurment system.
+func WithSystem(system System) Option {
+	return func(u *Unit) {
+		u.System = system
+	}
+}
+
+// WithType sets the unit SI type.
+func WithType(siType Type) Option {
+	return func(u *Unit) {
+		u.Type = siType
+	}
 }
 
 // Unit is a unit of measurement.
@@ -125,46 +154,8 @@ func (u *Unit) Validate() error {
 		return nil
 	}
 
-	return &ValidationError{
+	return &entity.ValidationError{
 		Issues: issues,
-	}
-}
-
-// Option is a unit creation option.
-type Option func(*Unit)
-
-// WithID sets the unit id.
-func WithID(id uuid.UUID) Option {
-	return func(u *Unit) {
-		u.id = id
-	}
-}
-
-// WithTimestamp sets the unit creation time.
-func WithTimestamp(now time.Time) Option {
-	return func(u *Unit) {
-		u.createdAt = now
-	}
-}
-
-// WithSymbol sets the unit symbol.
-func WithSymbol(symbol string) Option {
-	return func(u *Unit) {
-		u.Symbol = symbol
-	}
-}
-
-// WithSystem sets the unit measurment system.
-func WithSystem(system System) Option {
-	return func(u *Unit) {
-		u.System = system
-	}
-}
-
-// WithType sets the unit SI type.
-func WithType(siType Type) Option {
-	return func(u *Unit) {
-		u.Type = siType
 	}
 }
 
