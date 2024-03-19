@@ -38,8 +38,8 @@ func (i *Ingredient) Item() uuid.UUID {
 func (i *Ingredient) Validate() error {
 	issues := []string{}
 
-	if i.Quantity == 0 {
-		issues = append(issues, "quantity cannot be 0")
+	if i.Quantity <= 0 {
+		issues = append(issues, "quantity cannot be 0 or less than 0")
 	}
 
 	if len(issues) == 0 {
