@@ -2,117 +2,50 @@
 package unit
 
 import (
+	"errors"
 	"time"
 
-	"github.com/b-sea/supply-run-api/internal/entity"
+	"github.com/b-sea/supply-run-api/internal/domain"
 	"github.com/google/uuid"
 )
 
-// Type is a base or derived SI measurment types.
-type Type int
-
-// NoType et all are the different SI types.
-const (
-	NoType Type = iota
-	MassType
-	VolumeType
-)
-
-func (t Type) String() string {
-	switch t {
-	case MassType:
-		return "MASS"
-	case VolumeType:
-		return "VOLUME"
-	case NoType:
-		fallthrough
-	default:
-		return ""
-	}
-}
-
-// TypeFromString converts a string to a SI type.
-func TypeFromString(s string) Type {
-	switch s {
-	case "MASS":
-		return MassType
-	case "VOLUME":
-		return VolumeType
-	default:
-		return NoType
-	}
-}
-
-// System is a measurement system.
-type System int
-
-// NoSystem et all are the different measurement systems.
-const (
-	NoSystem System = iota
-	ImperialSystem
-	MetricSystem
-)
-
-func (s System) String() string {
-	switch s {
-	case ImperialSystem:
-		return "IMPERIAL"
-	case MetricSystem:
-		return "METRIC"
-	case NoSystem:
-		fallthrough
-	default:
-		return ""
-	}
-}
-
-// SystemFromString converts a string to a measurement system.
-func SystemFromString(s string) System {
-	switch s {
-	case "IMPERIAL":
-		return ImperialSystem
-	case "METRIC":
-		return MetricSystem
-	default:
-		return NoSystem
-	}
-}
-
 // Option is a unit creation option.
-type Option func(*Unit)
+type Option func(*Unit) error
 
-// WithID sets the unit id.
-func WithID(id uuid.UUID) Option {
-	return func(u *Unit) {
-		u.id = id
+// SetName sets the unit name.
+func SetName(name string) Option {
+	return func(u *Unit) error {
+		if name == "" {
+			return errors.New("unit name cannot be empty") //nolint: goerr113
+		}
+
+		u.name = name
+
+		return nil
 	}
 }
 
-// WithTimestamp sets the unit creation time.
-func WithTimestamp(now time.Time) Option {
-	return func(u *Unit) {
-		u.createdAt = now
+// SetSymbol sets the unit symbol.
+func SetSymbol(symbol string) Option {
+	return func(u *Unit) error {
+		u.symbol = symbol
+		return nil
 	}
 }
 
-// WithSymbol sets the unit symbol.
-func WithSymbol(symbol string) Option {
-	return func(u *Unit) {
-		u.Symbol = symbol
+// SetSystem sets the unit measurment system.
+func SetSystem(system System) Option {
+	return func(u *Unit) error {
+		u.system = system
+		return nil
 	}
 }
 
-// WithSystem sets the unit measurment system.
-func WithSystem(system System) Option {
-	return func(u *Unit) {
-		u.System = system
-	}
-}
-
-// WithType sets the unit SI type.
-func WithType(siType Type) Option {
-	return func(u *Unit) {
-		u.Type = siType
+// SetType sets the unit SI type.
+func SetType(siType Type) Option {
+	return func(u *Unit) error {
+		u.siType = siType
+		return nil
 	}
 }
 
@@ -120,11 +53,28 @@ func WithType(siType Type) Option {
 type Unit struct {
 	id        uuid.UUID
 	createdAt time.Time
+	updatedAt *time.Time
 	owner     uuid.UUID
-	Name      string
-	Symbol    string
-	Type      Type
-	System    System
+	name      string
+	symbol    string
+	siType    Type
+	system    System
+}
+
+func (u *Unit) loadOptions(opts ...Option) error {
+	issues := []string{}
+
+	for _, opt := range opts {
+		if err := opt(u); err != nil {
+			issues = append(issues, err.Error())
+		}
+	}
+
+	if len(issues) != 0 {
+		return &domain.ValidationError{Issues: issues}
+	}
+
+	return nil
 }
 
 // ID returns the id of a unit.
@@ -142,38 +92,66 @@ func (u *Unit) Owner() uuid.UUID {
 	return u.owner
 }
 
-// Validate the unit.
-func (u *Unit) Validate() error {
-	issues := []string{}
+// Name returns the name of the unit.
+func (u *Unit) Name() string {
+	return u.name
+}
 
-	if u.Name == "" {
-		issues = append(issues, "name cannot be empty")
+// Symbol returns the symbol of the unit.
+func (u *Unit) Symbol() string {
+	return u.symbol
+}
+
+// Type returns the SI type of the unit.
+func (u *Unit) Type() Type {
+	return u.siType
+}
+
+// System returns the measurement system of the unit.
+func (u *Unit) System() System {
+	return u.system
+}
+
+// Update an existing unit.
+func (u *Unit) Update(opts ...Option) error {
+	now := time.Now().UTC()
+	u.updatedAt = &now
+
+	if err := u.loadOptions(opts...); err != nil {
+		return err
 	}
 
-	if len(issues) == 0 {
-		return nil
-	}
-
-	return &entity.ValidationError{
-		Issues: issues,
-	}
+	return nil
 }
 
 // NewUnit creates a new unit.
-func NewUnit(name string, owner uuid.UUID, opts ...Option) *Unit {
-	result := &Unit{
+func NewUnit(name string, owner uuid.UUID, opts ...Option) (*Unit, error) {
+	unit := &Unit{
 		id:        uuid.New(),
 		createdAt: time.Now().UTC(),
 		owner:     owner,
-		Name:      name,
-		Symbol:    "",
-		Type:      NoType,
-		System:    NoSystem,
+		name:      name,
+		siType:    NoType,
+		system:    NoSystem,
 	}
 
-	for _, opt := range opts {
-		opt(result)
+	if err := unit.loadOptions(opts...); err != nil {
+		return nil, err
 	}
 
-	return result
+	return unit, nil
+}
+
+// Hydrate returns a unit in an existing state.
+func Hydrate(id uuid.UUID, name string, createdAt time.Time, updatedAt *time.Time, ownerID uuid.UUID) (*Unit, error) {
+	unit, err := NewUnit(name, ownerID)
+	if err != nil {
+		return nil, err
+	}
+
+	unit.id = id
+	unit.createdAt = createdAt
+	unit.updatedAt = updatedAt
+
+	return unit, nil
 }

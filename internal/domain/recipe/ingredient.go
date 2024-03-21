@@ -2,26 +2,58 @@
 package recipe
 
 import (
-	"github.com/b-sea/supply-run-api/internal/entity"
+	"errors"
+
+	"github.com/b-sea/supply-run-api/internal/domain"
 	"github.com/google/uuid"
 )
 
 // IngredientOption is an ingredient creation option.
-type IngredientOption func(*Ingredient)
+type IngredientOption func(i *Ingredient) error
 
-// WithIngredientID sets the ingredient id.
-func WithIngredientID(id uuid.UUID) IngredientOption {
-	return func(i *Ingredient) {
-		i.id = id
+// SetIngredientUnit sets the measurment unit of the ingredient.
+func SetIngredientUnit(unitID uuid.UUID) IngredientOption {
+	return func(i *Ingredient) error {
+		i.unitID = unitID
+		return nil
+	}
+}
+
+// SetIngredientQuantity sets the quantity of the ingredient.
+func SetIngredientQuantity(quantity float64) IngredientOption {
+	return func(i *Ingredient) error {
+		if quantity <= 0 {
+			return errors.New("ingredient quantity must be greater than 0") //nolint: goerr113
+		}
+
+		i.quantity = quantity
+
+		return nil
 	}
 }
 
 // Ingredient is a recipe ingredient.
 type Ingredient struct {
 	id       uuid.UUID
-	item     uuid.UUID
-	Unit     uuid.UUID
-	Quantity float64
+	itemID   uuid.UUID
+	unitID   uuid.UUID
+	quantity float64
+}
+
+func (i *Ingredient) loadOptions(opts ...IngredientOption) error {
+	issues := []string{}
+
+	for _, opt := range opts {
+		if err := opt(i); err != nil {
+			issues = append(issues, err.Error())
+		}
+	}
+
+	if len(issues) != 0 {
+		return &domain.ValidationError{Issues: issues}
+	}
+
+	return nil
 }
 
 // ID returns the ingredient id.
@@ -29,40 +61,53 @@ func (i *Ingredient) ID() uuid.UUID {
 	return i.id
 }
 
-// Item returns the item used in the ingredient.
-func (i *Ingredient) Item() uuid.UUID {
-	return i.item
+// ItemID returns the item id used in the ingredient.
+func (i *Ingredient) ItemID() uuid.UUID {
+	return i.itemID
 }
 
-// Validate the ingredient.
-func (i *Ingredient) Validate() error {
-	issues := []string{}
+// UnitID returns the unit id used in the ingredient.
+func (i *Ingredient) UnitID() uuid.UUID {
+	return i.itemID
+}
 
-	if i.Quantity <= 0 {
-		issues = append(issues, "quantity cannot be 0 or less than 0")
+// Quantity returns the amount of ingredient used in the recipe.
+func (i *Ingredient) Quantity() float64 {
+	return i.quantity
+}
+
+// Update an ingredient.
+func (i *Ingredient) Update(opts ...IngredientOption) error {
+	if err := i.loadOptions(opts...); err != nil {
+		return err
 	}
 
-	if len(issues) == 0 {
-		return nil
-	}
-
-	return &entity.ValidationError{
-		Issues: issues,
-	}
+	return nil
 }
 
 // NewIngredient creates a new recipe ingredient.
-func NewIngredient(item uuid.UUID, unit uuid.UUID, quantity float64, opts ...IngredientOption) *Ingredient {
+func NewIngredient(itemID uuid.UUID, unitID uuid.UUID, quantity float64) (*Ingredient, error) {
 	ingredient := &Ingredient{
-		id:       uuid.New(),
-		item:     item,
-		Unit:     unit,
-		Quantity: quantity,
+		id:     uuid.New(),
+		itemID: itemID,
 	}
 
-	for _, opt := range opts {
-		opt(ingredient)
+	opts := []IngredientOption{SetIngredientUnit(unitID), SetIngredientQuantity(quantity)}
+	if err := ingredient.loadOptions(opts...); err != nil {
+		return nil, err
 	}
 
-	return ingredient
+	return ingredient, nil
+}
+
+// HydrateIngredient returns a recipe ingredient in an existing state.
+func HydrateIngredient(id uuid.UUID, itemID uuid.UUID, unitID uuid.UUID, quantity float64) (*Ingredient, error) {
+	ingredient, err := NewIngredient(itemID, unitID, quantity)
+	if err != nil {
+		return nil, err
+	}
+
+	ingredient.id = id
+
+	return ingredient, nil
 }
