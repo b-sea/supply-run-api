@@ -86,9 +86,9 @@ func (i *Ingredient) Update(opts ...IngredientOption) error {
 }
 
 // NewIngredient creates a new recipe ingredient.
-func NewIngredient(itemID uuid.UUID, unitID uuid.UUID, quantity float64) (*Ingredient, error) {
+func NewIngredient(id uuid.UUID, itemID uuid.UUID, unitID uuid.UUID, quantity float64) (*Ingredient, error) {
 	ingredient := &Ingredient{
-		id:     uuid.New(),
+		id:     id,
 		itemID: itemID,
 	}
 
@@ -96,18 +96,6 @@ func NewIngredient(itemID uuid.UUID, unitID uuid.UUID, quantity float64) (*Ingre
 	if err := ingredient.loadOptions(opts...); err != nil {
 		return nil, err
 	}
-
-	return ingredient, nil
-}
-
-// HydrateIngredient returns a recipe ingredient in an existing state.
-func HydrateIngredient(id uuid.UUID, itemID uuid.UUID, unitID uuid.UUID, quantity float64) (*Ingredient, error) {
-	ingredient, err := NewIngredient(itemID, unitID, quantity)
-	if err != nil {
-		return nil, err
-	}
-
-	ingredient.id = id
 
 	return ingredient, nil
 }

@@ -27,28 +27,15 @@ func (t *Tag) OwnerID() uuid.UUID {
 }
 
 // NewTag creates a new tag.
-func NewTag(name string, ownerID uuid.UUID) (*Tag, error) {
+func NewTag(id uuid.UUID, timestamp time.Time, name string, ownerID uuid.UUID) (*Tag, error) {
 	if name == "" {
 		return nil, &domain.ValidationError{Issues: []string{"tag cannot be empty"}}
 	}
 
 	return &Tag{
-		id:        uuid.New(),
+		id:        id,
 		ownerID:   ownerID,
-		createdAt: time.Now().UTC(),
+		createdAt: timestamp.UTC(),
 		name:      name,
 	}, nil
-}
-
-// Hydrate returns a tag in an existing state.
-func Hydrate(id uuid.UUID, name string, createdAt time.Time, ownerID uuid.UUID) (*Tag, error) {
-	tag, err := NewTag(name, ownerID)
-	if err != nil {
-		return nil, err
-	}
-
-	tag.id = id
-	tag.createdAt = createdAt
-
-	return tag, nil
 }

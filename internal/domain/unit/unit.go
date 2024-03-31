@@ -54,7 +54,7 @@ type Unit struct {
 	id        uuid.UUID
 	createdAt time.Time
 	updatedAt *time.Time
-	owner     uuid.UUID
+	ownerID   uuid.UUID
 	name      string
 	symbol    string
 	siType    Type
@@ -87,9 +87,14 @@ func (u *Unit) CreatedAt() time.Time {
 	return u.createdAt
 }
 
-// Owner returns the creator of the unit.
-func (u *Unit) Owner() uuid.UUID {
-	return u.owner
+// UpdatedAt returns a timestamp when the unit was last updated.
+func (u *Unit) UpdatedAt() *time.Time {
+	return u.updatedAt
+}
+
+// OwnerID returns the creator of the unit.
+func (u *Unit) OwnerID() uuid.UUID {
+	return u.ownerID
 }
 
 // Name returns the name of the unit.
@@ -113,8 +118,8 @@ func (u *Unit) System() System {
 }
 
 // Update an existing unit.
-func (u *Unit) Update(opts ...Option) error {
-	now := time.Now().UTC()
+func (u *Unit) Update(timestamp time.Time, opts ...Option) error {
+	now := timestamp.UTC()
 	u.updatedAt = &now
 
 	if err := u.loadOptions(opts...); err != nil {
@@ -125,33 +130,21 @@ func (u *Unit) Update(opts ...Option) error {
 }
 
 // NewUnit creates a new unit.
-func NewUnit(name string, owner uuid.UUID, opts ...Option) (*Unit, error) {
+func NewUnit(id uuid.UUID, timestamp time.Time, name string, ownerID uuid.UUID, opts ...Option) (*Unit, error) {
 	unit := &Unit{
-		id:        uuid.New(),
-		createdAt: time.Now().UTC(),
-		owner:     owner,
-		name:      name,
+		id:        id,
+		createdAt: timestamp.UTC(),
+		ownerID:   ownerID,
+		name:      "",
 		siType:    NoType,
 		system:    NoSystem,
 	}
 
+	opts = append(opts, SetName(name))
+
 	if err := unit.loadOptions(opts...); err != nil {
 		return nil, err
 	}
-
-	return unit, nil
-}
-
-// Hydrate returns a unit in an existing state.
-func Hydrate(id uuid.UUID, name string, createdAt time.Time, updatedAt *time.Time, ownerID uuid.UUID) (*Unit, error) {
-	unit, err := NewUnit(name, ownerID)
-	if err != nil {
-		return nil, err
-	}
-
-	unit.id = id
-	unit.createdAt = createdAt
-	unit.updatedAt = updatedAt
 
 	return unit, nil
 }

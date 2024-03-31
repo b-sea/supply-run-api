@@ -34,7 +34,7 @@ func SetDescription(desc string) Option {
 }
 
 // SetURL sets the recipe URL.
-func SetURL(url string) Option {
+func SetURL(url *string) Option {
 	return func(r *Recipe) error {
 		r.url = url
 		return nil
@@ -93,7 +93,7 @@ type Recipe struct {
 	ownerID     uuid.UUID
 	name        string
 	desc        string
-	url         string
+	url         *string
 	servings    int
 	ingredients []*Ingredient
 	steps       []string
@@ -142,7 +142,7 @@ func (r *Recipe) Description() string {
 }
 
 // URL returns the recipe source url.
-func (r *Recipe) URL() string {
+func (r *Recipe) URL() *string {
 	return r.url
 }
 
@@ -171,20 +171,9 @@ func (r *Recipe) TagIDs() []uuid.UUID {
 	return r.tagIDs
 }
 
-// Snippet returns the simple recipe details.
-func (r *Recipe) Snippet() *Snippet {
-	return &Snippet{
-		id:      r.id,
-		ownerID: r.ownerID,
-		name:    r.name,
-		desc:    r.desc,
-		tagIDs:  r.tagIDs,
-	}
-}
-
 // Update an existing recipe.
-func (r *Recipe) Update(opts ...Option) error {
-	now := time.Now().UTC()
+func (r *Recipe) Update(timestamp time.Time, opts ...Option) error {
+	now := timestamp.UTC()
 	r.updatedAt = &now
 
 	if err := r.loadOptions(opts...); err != nil {
@@ -195,10 +184,10 @@ func (r *Recipe) Update(opts ...Option) error {
 }
 
 // NewRecipe creates a new recipe.
-func NewRecipe(name string, ownerID uuid.UUID, opts ...Option) (*Recipe, error) {
+func NewRecipe(id uuid.UUID, name string, ownerID uuid.UUID, timestamp time.Time, opts ...Option) (*Recipe, error) {
 	recipe := &Recipe{
-		id:          uuid.Nil,
-		createdAt:   time.Now().UTC(),
+		id:          id,
+		createdAt:   timestamp.UTC(),
 		ownerID:     ownerID,
 		name:        "",
 		servings:    1,
@@ -212,27 +201,6 @@ func NewRecipe(name string, ownerID uuid.UUID, opts ...Option) (*Recipe, error) 
 	if err := recipe.loadOptions(opts...); err != nil {
 		return nil, err
 	}
-
-	return recipe, nil
-}
-
-// Hydrate returns a recipe in an existing state.
-func Hydrate(
-	id uuid.UUID,
-	name string,
-	createdAt time.Time,
-	updatedAt *time.Time,
-	ownerID uuid.UUID,
-	opts ...Option,
-) (*Recipe, error) {
-	recipe, err := NewRecipe(name, ownerID, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	recipe.id = id
-	recipe.createdAt = createdAt
-	recipe.updatedAt = updatedAt
 
 	return recipe, nil
 }
