@@ -24,3 +24,6 @@ test:
 
 lint:
 	@golangci-lint run -c tools/.golangci.yml
+
+gqlgen:
+	@go run github.com/99designs/gqlgen generate --config ./internal/cookbook/gqlgen.yml

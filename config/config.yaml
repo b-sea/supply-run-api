@@ -1,0 +1,22 @@
+couchbase:
+  url: 
+  user:
+  pwd:
+
+jwt:
+  signMethod: "RS256"
+  publicKeyPath: 
+  privateKeyPath: 
+  issuer: "supply-run.api"
+  audience: 
+  accessTimeout: 900
+  refreshTimeout: 2592000
+
+auth:
+  minLength: 12
+  maxLength: 150
+  upper: true
+  lower: true
+  number: true
+  special: true
+  pepper:

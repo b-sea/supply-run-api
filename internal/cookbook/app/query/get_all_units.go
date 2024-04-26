@@ -6,6 +6,12 @@ type GetAllUnitsHandler struct {
 	reader GetAllUnitsReader
 }
 
+func NewGetAllUnitsHandler(reader GetAllUnitsReader) *GetAllUnitsHandler {
+	return &GetAllUnitsHandler{
+		reader: reader,
+	}
+}
+
 func (h GetAllUnitsHandler) Handle(userID uuid.UUID) ([]*Unit, error) {
 	return h.reader.GetAllUnits(userID)
 }

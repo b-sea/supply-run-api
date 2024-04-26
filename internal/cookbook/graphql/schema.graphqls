@@ -1,0 +1,61 @@
+scalar Time
+
+type Recipe{
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time
+  owner: ID!
+  name: String!
+  description: String!
+  url: String
+  ingredients: [Ingredient!]
+  steps: [String!]
+  serving: Int!
+}
+
+type Ingredient {
+  id: ID!
+  unit: Unit!
+  Quantity: Float!
+}
+
+type Unit {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time
+  owner: ID!
+  name: String!
+  symbol: String!
+  type: UnitType!
+  system: MeasurementSystem!
+}
+
+enum UnitType {
+  NONE
+  MASS
+  VOLUME
+}
+
+enum MeasurementSystem {
+  NONE
+  IMPERIAL
+  METRIC
+}
+
+type RecipeSnippet {
+  id: ID!
+  createdAt: Time!
+  name: String!
+  description: String!
+}
+
+input RecipeFilter {
+  name: String
+  tagIDs: [ID!]
+}
+
+type Query {
+  findRecipeSnippets(filter: RecipeFilter): [RecipeSnippet!]
+  recipe(id: ID!): Recipe
+  allUnits: [Unit!]
+}

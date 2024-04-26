@@ -11,9 +11,9 @@ type Commands struct {
 }
 
 type Queries struct {
-	FindRecipeSnippets query.FindRecipeSnippetsHandler
-	GetRecipe          query.GetRecipeHandler
-	GetIngredients     query.GetIngredientsHandler
-	GetAllUnits        query.GetAllUnitsHandler
-	GetUnits           query.GetUnitsHandler
+	FindRecipeSnippets *query.FindRecipeSnippetsHandler
+	GetRecipe          *query.GetRecipeHandler
+	GetIngredients     *query.GetIngredientsHandler
+	GetAllUnits        *query.GetAllUnitsHandler
+	GetUnits           *query.GetUnitsHandler
 }
