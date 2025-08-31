@@ -1,3 +1,4 @@
+// Package auth defines authentication workflows and entities.
 package auth
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/b-sea/supply-run-api/internal/entity"
 )
 
+// AccountOption is a creation option for a user Account.
 type AccountOption func(account *Account) error
 
 func setPassword(password string) AccountOption {
@@ -16,6 +18,7 @@ func setPassword(password string) AccountOption {
 	}
 }
 
+// Account defines exhaustive user information.
 type Account struct {
 	id        entity.ID
 	username  string
@@ -24,6 +27,7 @@ type Account struct {
 	updatedAt time.Time
 }
 
+// NewAccount creates a new user Account.
 func NewAccount(id entity.ID, username string, password string, timestamp time.Time) *Account {
 	return &Account{
 		id:        id,
@@ -34,6 +38,7 @@ func NewAccount(id entity.ID, username string, password string, timestamp time.T
 	}
 }
 
+// Update an existing user Account.
 func (a *Account) Update(timestamp time.Time, options ...AccountOption) error {
 	errs := make([]error, 0)
 
@@ -52,22 +57,27 @@ func (a *Account) Update(timestamp time.Time, options ...AccountOption) error {
 	return nil
 }
 
+// ID returns the Account ID.
 func (a *Account) ID() entity.ID {
 	return a.id
 }
 
+// Username returns the Account username.
 func (a *Account) Username() string {
 	return a.username
 }
 
+// Password returns the Account hashed password.
 func (a *Account) Password() string {
 	return a.password
 }
 
+// CreatedAt returns when the Account was created.
 func (a *Account) CreatedAt() time.Time {
 	return a.createdAt
 }
 
+// UpdatedAt returns the Account was updated.
 func (a *Account) UpdatedAt() time.Time {
 	return a.updatedAt
 }

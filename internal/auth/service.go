@@ -1,3 +1,4 @@
+// Package auth defines authentication workflows and entities.
 package auth
 
 import (
@@ -7,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql"
 	"github.com/b-sea/go-auth/password"
 	"github.com/b-sea/go-auth/token"
 	"github.com/b-sea/supply-run-api/internal/entity"
@@ -23,10 +23,12 @@ const (
 
 type contextKey string
 
+// Recorder defines functions for tracking auth-based metrics.
 type Recorder interface {
 	RequestAuthorized(username string)
 }
 
+// Service is an authentication service.
 type Service struct {
 	token     *token.Service
 	pwd       *password.Service
@@ -35,6 +37,7 @@ type Service struct {
 	timestamp func() time.Time
 }
 
+// NewService creates a new authentication Service.
 func NewService(repo Repository, token *token.Service, pwd *password.Service, recorder Recorder) *Service {
 	return &Service{
 		token:     token,
@@ -45,11 +48,13 @@ func NewService(repo Repository, token *token.Service, pwd *password.Service, re
 	}
 }
 
+// TokensCommand is the input for Tokens.
 type TokensCommand struct {
 	Username string
 	Password string
 }
 
+// Tokens generates access and refresh tokens from credentials.
 func (s *Service) Tokens(_ context.Context, cmd TokensCommand) (*Tokens, error) {
 	user, err := s.repo.GetAuthUser(cmd.Username)
 	if err != nil {
@@ -104,6 +109,7 @@ func (s *Service) Tokens(_ context.Context, cmd TokensCommand) (*Tokens, error) 
 	}, nil
 }
 
+// GetAccount returns the user Account of an authenticated user.
 func (s *Service) GetAccount(ctx context.Context) (*Account, error) {
 	user, err := FromContext(ctx)
 	if err != nil {
@@ -118,11 +124,13 @@ func (s *Service) GetAccount(ctx context.Context) (*Account, error) {
 	return account, nil
 }
 
+// CreateAccountCommand is the input for CreateAccount.
 type CreateAccountCommand struct {
 	Username string
 	Password string
 }
 
+// CreateAccount creates a new user Account.
 func (s *Service) CreateAccount(_ context.Context, cmd CreateAccountCommand) error {
 	// TODO: Validate username length
 	if _, err := s.repo.GetAuthUser(cmd.Username); err != nil {
@@ -151,10 +159,12 @@ func (s *Service) CreateAccount(_ context.Context, cmd CreateAccountCommand) err
 	return nil
 }
 
+// UpdateAccountCommand is the input for UpdateAccount.
 type UpdateAccountCommand struct {
 	Password *string
 }
 
+// UpdateAccount updates an existing user Account.
 func (s *Service) UpdateAccount(ctx context.Context, cmd UpdateAccountCommand) error {
 	user, err := FromContext(ctx)
 	if err != nil {
@@ -196,6 +206,7 @@ func (s *Service) UpdateAccount(ctx context.Context, cmd UpdateAccountCommand) e
 	return nil
 }
 
+// DeleteAccount deletes an existing user Account.
 func (s *Service) DeleteAccount(ctx context.Context) error {
 	user, err := FromContext(ctx)
 	if err != nil {
@@ -209,6 +220,12 @@ func (s *Service) DeleteAccount(ctx context.Context) error {
 	return nil
 }
 
+// Middleware is authentication middleware.
+//
+// This will extract token data from a request "Authentication" header and store the
+// associated authenticated user in the request context.
+// If no token is found, this will not error. The request context will simply not
+// contain an authenticated user.
 func (s *Service) Middleware() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -243,16 +260,7 @@ func (s *Service) Middleware() mux.MiddlewareFunc {
 	}
 }
 
-func (s *Service) Directive() func(ctx context.Context, obj any, next graphql.Resolver) (any, error) {
-	return func(ctx context.Context, obj any, next graphql.Resolver) (any, error) {
-		if _, err := FromContext(ctx); err != nil {
-			return nil, err
-		}
-
-		return next(ctx)
-	}
-}
-
+// FromContext retrieves an authenticated User from a context.
 func FromContext(ctx context.Context) (*User, error) {
 	user, ok := ctx.Value(userKey).(*User)
 	if !ok {
@@ -262,6 +270,7 @@ func FromContext(ctx context.Context) (*User, error) {
 	return user, nil
 }
 
+// Challenge configures an HTTP response with appropriate header values when tokens are incorrect or missing.
 func Challenge(writer http.ResponseWriter) {
 	writer.Header().Add("WWW-Authenticate", strings.Trim(bearerPrefix, " "))
 	http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)

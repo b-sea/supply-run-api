@@ -64,7 +64,7 @@ func NewServer(auth *auth.Service, recorder Recorder, options ...Option) *Server
 
 	server.router.Use(server.metricsMiddleware(), server.auth.Middleware())
 	server.router.Handle("/metrics", server.metricsHandler()).Methods(http.MethodGet)
-	server.router.Handle("/graphql", graphql.NewHandler(server.auth)).Methods(http.MethodPost)
+	server.router.Handle("/graphql", graphql.NewHandler(server.auth, recorder)).Methods(http.MethodPost)
 	server.router.HandleFunc("/playground", playground.Handler("Supply Run Playground", "/graphql"))
 
 	// Re-define the default NotFound handler so it passes through middleware correctly.

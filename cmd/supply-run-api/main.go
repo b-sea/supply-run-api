@@ -11,7 +11,7 @@ import (
 	"github.com/b-sea/go-auth/token"
 	"github.com/b-sea/supply-run-api/internal/auth"
 	"github.com/b-sea/supply-run-api/internal/memory"
-	"github.com/b-sea/supply-run-api/internal/mock"
+	"github.com/b-sea/supply-run-api/internal/prometheus"
 	"github.com/b-sea/supply-run-api/internal/server"
 	"github.com/sirupsen/logrus"
 )
@@ -32,7 +32,7 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	recorder := &mock.Recorder{}
+	recorder := prometheus.NewRecorder("supply-run-api")
 
 	svr := server.NewServer(
 		auth.NewService(

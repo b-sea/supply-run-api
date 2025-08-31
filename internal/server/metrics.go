@@ -1,18 +1,22 @@
 package server
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/b-sea/supply-run-api/internal/auth"
+	"github.com/b-sea/supply-run-api/internal/server/graphql"
 	"github.com/gorilla/mux"
 )
 
 type Recorder interface {
+	Handler() http.Handler
+
 	ObserveRequestDuration(method string, path string, code string, duration time.Duration)
 	ObserveResponseSize(method string, path string, code string, bytes int64)
+
+	graphql.Recorder
 }
 
 type metricsWriter struct {
@@ -67,6 +71,6 @@ func (s *Server) metricsHandler() http.HandlerFunc {
 			return
 		}
 
-		_ = json.NewEncoder(writer).Encode("metrics!")
+		s.recorder.Handler().ServeHTTP(writer, request)
 	}
 }
