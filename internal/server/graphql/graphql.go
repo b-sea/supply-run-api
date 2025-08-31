@@ -1,3 +1,4 @@
+// Package graphql implements a GraphQL API.
 package graphql
 
 import (
@@ -15,16 +16,18 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
+// Recorder defines functions for tracking GraphQL-based metrics.
 type Recorder interface {
 	ObserveResolverDuration(object string, field string, status string, duration time.Duration)
 	ObserveResolverError(object string, field string, code string)
 }
 
-func NewHandler(authZ *auth.Service, recorder Recorder) http.Handler {
+// NewHandler configures and creates a GraphQL API handler.
+func NewHandler(authN *auth.Service, recorder Recorder) http.Handler {
 	schema := resolver.NewExecutableSchema(
 		resolver.Config{
 			Resolvers: &resolver.Resolver{
-				Auth: authZ,
+				Auth: authN,
 			},
 			Directives: resolver.DirectiveRoot{
 				Protected: func(ctx context.Context, _ interface{}, next graphql.Resolver) (interface{}, error) {

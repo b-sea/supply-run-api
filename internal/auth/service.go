@@ -1,4 +1,4 @@
-// Package auth defines authentication workflows and entities.
+// Package auth implements authentication workflows and entities.
 package auth
 
 import (
@@ -84,7 +84,7 @@ func (s *Service) Tokens(_ context.Context, cmd TokensCommand) (*Tokens, error) 
 	}
 
 	if err := account.Update(s.timestamp().UTC(), setPassword(hashed)); err != nil {
-		return nil, err
+		return nil, systemError(err)
 	}
 
 	if err := s.repo.UpdateAccount(account); err != nil {
@@ -93,12 +93,12 @@ func (s *Service) Tokens(_ context.Context, cmd TokensCommand) (*Tokens, error) 
 
 	access, err := s.token.GenerateAccessToken(account.username)
 	if err != nil {
-		return nil, err
+		return nil, systemError(err)
 	}
 
 	refresh, err := s.token.GenerateRefreshToken(account.username)
 	if err != nil {
-		return nil, err
+		return nil, systemError(err)
 	}
 
 	s.recorder.RequestAuthorized(user.username)
@@ -118,7 +118,7 @@ func (s *Service) GetAccount(ctx context.Context) (*Account, error) {
 
 	account, err := s.repo.GetAccount(user.id)
 	if err != nil {
-		return nil, err
+		return nil, systemError(err)
 	}
 
 	return account, nil
@@ -135,7 +135,7 @@ func (s *Service) CreateAccount(_ context.Context, cmd CreateAccountCommand) err
 	// TODO: Validate username length
 	if _, err := s.repo.GetAuthUser(cmd.Username); err != nil {
 		if !errors.Is(err, ErrNotFound) {
-			return err
+			return systemError(err)
 		}
 	} else {
 		return ErrDuplicateAccount
@@ -153,7 +153,7 @@ func (s *Service) CreateAccount(_ context.Context, cmd CreateAccountCommand) err
 	account := NewAccount(entity.NewID(), cmd.Username, hashed, s.timestamp().UTC())
 
 	if err := s.repo.CreateAccount(account); err != nil {
-		return err
+		return systemError(err)
 	}
 
 	return nil
@@ -192,7 +192,7 @@ func (s *Service) UpdateAccount(ctx context.Context, cmd UpdateAccountCommand) e
 
 	account, err := s.repo.GetAccount(user.id)
 	if err != nil {
-		return err
+		return systemError(err)
 	}
 
 	if err := account.Update(s.timestamp().UTC(), options...); err != nil {
@@ -200,7 +200,7 @@ func (s *Service) UpdateAccount(ctx context.Context, cmd UpdateAccountCommand) e
 	}
 
 	if err := s.repo.UpdateAccount(account); err != nil {
-		return err
+		return systemError(err)
 	}
 
 	return nil
@@ -214,7 +214,7 @@ func (s *Service) DeleteAccount(ctx context.Context) error {
 	}
 
 	if err := s.repo.DeleteAccount(user.id); err != nil {
-		return err
+		return systemError(err)
 	}
 
 	return nil

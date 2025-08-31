@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Recorder defines functions for tracking HTTP-based metrics.
 type Recorder interface {
 	Handler() http.Handler
 
@@ -34,7 +35,7 @@ func (w *metricsWriter) WriteHeader(statusCode int) {
 func (w *metricsWriter) Write(p []byte) (int, error) {
 	w.Size += len(p)
 
-	return w.ResponseWriter.Write(p)
+	return w.ResponseWriter.Write(p) //nolint: wrapcheck
 }
 
 func (s *Server) metricsMiddleware() mux.MiddlewareFunc {

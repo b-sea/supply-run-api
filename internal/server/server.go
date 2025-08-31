@@ -1,3 +1,4 @@
+// Package server implements the API web server.
 package server
 
 import (
@@ -20,14 +21,17 @@ const (
 	defaultTimeout = time.Minute
 )
 
+// Option is a creation option for a Server.
 type Option func(server *Server)
 
+// WithPort overrides the port used by the Server.
 func WithPort(port int) Option {
 	return func(server *Server) {
 		server.http.Addr = fmt.Sprintf(":%d", port)
 	}
 }
 
+// WithTimeout overrides the HTTP read and write timeouts for the Server.
 func WithTimeout(duration time.Duration) Option {
 	return func(server *Server) {
 		server.http.ReadTimeout = duration
@@ -36,6 +40,7 @@ func WithTimeout(duration time.Duration) Option {
 	}
 }
 
+// Server is a supply-run API web server.
 type Server struct {
 	http      *http.Server
 	router    *mux.Router
@@ -44,6 +49,7 @@ type Server struct {
 	recorder  Recorder
 }
 
+// NewServer creates a new Server.
 func NewServer(auth *auth.Service, recorder Recorder, options ...Option) *Server {
 	server := &Server{
 		http: &http.Server{
@@ -74,6 +80,7 @@ func NewServer(auth *auth.Service, recorder Recorder, options ...Option) *Server
 	return server
 }
 
+// Start the Server.
 func (s *Server) Start() {
 	go func() {
 		logrus.Infof("Starting server %s", s.http.Addr)
@@ -84,6 +91,7 @@ func (s *Server) Start() {
 	}()
 }
 
+// Stop the Server.
 func (s *Server) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()

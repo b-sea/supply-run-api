@@ -1,11 +1,9 @@
+// Package resolver implements all GraphQL resolvers.
 package resolver
 
 import "github.com/b-sea/supply-run-api/internal/auth"
 
-// This file will not be regenerated automatically.
-//
-// It serves as dependency injection for your app, add any dependencies you require here.
-
+// Resolver defines all data available to the resolvers.
 type Resolver struct {
 	Auth *auth.Service
 }

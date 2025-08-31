@@ -1,4 +1,4 @@
-// Package auth defines authentication workflows and entities.
+// Package auth implements authentication workflows and entities.
 package auth
 
 import (
