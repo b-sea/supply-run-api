@@ -1,3 +1,4 @@
+// Package entity defines common data types.
 package entity
 
 import (
@@ -6,10 +7,12 @@ import (
 	"github.com/zeebo/xxh3"
 )
 
+// ID is a unique identifier.
 type ID struct {
 	key string
 }
 
+// NewID generates a new random ID.
 func NewID() ID {
 	return ID{
 		key: shortuuid.New(),
@@ -26,6 +29,7 @@ func NewSeededID(seed []byte) ID {
 	}
 }
 
+// IsValid returns if an ID is valid.
 func (id ID) IsValid() bool {
 	return id.key != ""
 }

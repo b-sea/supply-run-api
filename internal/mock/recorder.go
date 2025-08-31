@@ -8,8 +8,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var _ server.Recorder = (*Recorder)(nil)
-var _ auth.Recorder = (*Recorder)(nil)
+var (
+	_ server.Recorder = (*Recorder)(nil)
+	_ auth.Recorder   = (*Recorder)(nil)
+)
 
 type Recorder struct{}
 

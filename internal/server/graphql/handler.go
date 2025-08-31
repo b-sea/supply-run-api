@@ -80,6 +80,7 @@ func asGraphQLError(err error) *gqlerror.Error {
 		gqlErr = gqlerror.Wrap(err)
 	}
 
-	errcode.Set(gqlErr, "ERR_"+strings.ToUpper(strings.Replace(gqlErr.Message, " ", "_", -1)))
+	errcode.Set(gqlErr, "ERR_"+strings.ToUpper(strings.ReplaceAll(gqlErr.Message, " ", "_")))
+
 	return gqlErr
 }

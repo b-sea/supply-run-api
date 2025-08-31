@@ -15,9 +15,26 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const defaultPort = 5000
+const (
+	defaultPort    = 5000
+	defaultTimeout = time.Minute
+)
 
 type Option func(server *Server)
+
+func WithPort(port int) Option {
+	return func(server *Server) {
+		server.http.Addr = fmt.Sprintf(":%d", port)
+	}
+}
+
+func WithTimeout(duration time.Duration) Option {
+	return func(server *Server) {
+		server.http.ReadTimeout = duration
+		server.http.ReadHeaderTimeout = duration
+		server.http.WriteTimeout = duration
+	}
+}
 
 type Server struct {
 	http      *http.Server
@@ -30,7 +47,10 @@ type Server struct {
 func NewServer(auth *auth.Service, recorder Recorder, options ...Option) *Server {
 	server := &Server{
 		http: &http.Server{
-			Addr: fmt.Sprintf(":%d", defaultPort),
+			Addr:              fmt.Sprintf(":%d", defaultPort),
+			ReadTimeout:       defaultTimeout,
+			ReadHeaderTimeout: defaultTimeout,
+			WriteTimeout:      defaultTimeout,
 		},
 		router:    mux.NewRouter(),
 		validator: validator.New(),
