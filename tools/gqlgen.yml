@@ -1,0 +1,39 @@
+# Where are all the schema files located? globs are supported eg  src/**/*.graphqls
+schema:
+  - internal/server/graphql/schema/**/*.graphqls
+
+# Where should the generated server code go?
+exec:
+  filename: internal/server/graphql/resolver/generated.go
+  package: resolver
+
+# Uncomment to enable federation
+# federation:
+#   filename: graphql/generated/federation.go
+#   package: generated
+
+# Where should any generated models go?
+model:
+  filename: internal/server/graphql/model/models_gen.go
+  package: model
+
+# Where should the resolver implementations go?
+resolver:
+  layout: follow-schema
+  dir: internal/server/graphql/resolver
+  package: resolver
+  filename_template: "{name}.go"
+
+# This section declares type mapping between the GraphQL and go type systems
+#
+# The first line in each type will be used as defaults for resolver arguments and
+# modelgen, the others will be allowed when binding to fields. Configure them to
+# your liking
+models:
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int32
+  Int64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int64

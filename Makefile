@@ -1,16 +1,10 @@
-.PHONY: api assets build cmd configs deployments docs examples githooks init interna pkg scripts test third_party tools web website
+GOLANGCILINT_VERSION=v1.63.4
+GOLANGCILINT_ROOT=$$(go env GOPATH)/../golangci-lint
+GOLANGCILINT_PATH=${GOLANGCILINT_ROOT}/${GOLANGCILINT_VERSION}
 
-init:
-ifneq (, $(wildcard ./go.mod))
-	$(error "Cannot make init, go.mod already exists")
-endif
-	@go mod init $$(git remote get-url origin | sed -e 's/.*:\/\/\(.*\)$$/\1/' -e 's/\.git$$//')
-	@touch .env
-	@touch go.sum
-	@printf "// Main package is the entrypoint for the program\npackage main\n\nfunc main() {}\n" > cmd/main.go
-	@printf "package main_test\n" > cmd/main_test.go
+.PHONY: tidy test lint gqlgen certs
 
-setup:
+tidy:
 	go mod tidy
 
 cert:
@@ -22,5 +16,21 @@ test:
 	@mkdir -p .test
 	@go test -coverprofile=./.test/coverage.out ./...
 
-lint:
-	@golangci-lint run -c tools/.golangci.yml
+setup-lint:
+	@mkdir -p ${GOLANGCILINT_ROOT}
+	@mkdir -p ${GOLANGCILINT_PATH}
+	@if [ -z "$$(ls -A "${GOLANGCILINT_PATH}")" ]; then \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "${GOLANGCILINT_PATH}" "${GOLANGCILINT_VERSION}"; \
+	fi
+
+lint: setup-lint
+	@${GOLANGCILINT_PATH}/golangci-lint run -c tools/.golangci.yml
+
+
+gqlgen:
+	@go run github.com/99designs/gqlgen generate --config tools/gqlgen.yml
+
+certs:
+	@mkdir -p .certs
+	@openssl genrsa -out .certs/key.pem 2048
+	@openssl rsa -in .certs/key.pem -pubout > .certs/key.pub

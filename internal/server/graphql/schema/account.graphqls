@@ -1,0 +1,38 @@
+directive @protected on FIELD_DEFINITION
+
+type Account {
+  id: ID!
+  username: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+extend type Query {
+  account: Account! @protected
+}
+
+input TokenInput {
+  username: String!
+  password: String!
+}
+
+type Tokens {
+  access: String!
+  refresh: String!
+}
+
+input CreateAccountInput {
+  username: String!
+  password: String!
+}
+
+input UpdateAccountInput {
+  password: String
+}
+
+extend type Mutation {
+  tokens(input: TokenInput!): Tokens!
+  createAccount(input: CreateAccountInput!): Boolean!
+  updateAccount(input: UpdateAccountInput!): Boolean! @protected
+  deleteAccount: Boolean! @protected
+}
