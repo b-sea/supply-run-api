@@ -7,7 +7,7 @@ tokens:
   signMethod: "RS256"
   publicKeyPath: 
   privateKeyPath: 
-  issuer: "supply-run.auth.service"
+  issuer: "supply-run.api"
   audience: 
   accessTimeout: 900
   refreshTimeout: 2592000

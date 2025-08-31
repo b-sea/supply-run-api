@@ -1,16 +1,6 @@
-.PHONY: api assets build cmd configs deployments docs examples githooks init interna pkg scripts test third_party tools web website
+.PHONY: tidy test lint gqlgen certs
 
-init:
-ifneq (, $(wildcard ./go.mod))
-	$(error "Cannot make init, go.mod already exists")
-endif
-	@go mod init $$(git remote get-url origin | sed -e 's/.*:\/\/\(.*\)$$/\1/' -e 's/\.git$$//')
-	@touch .env
-	@touch go.sum
-	@printf "// Main package is the entrypoint for the program\npackage main\n\nfunc main() {}\n" > cmd/main.go
-	@printf "package main_test\n" > cmd/main_test.go
-
-setup:
+tidy:
 	go mod tidy
 
 cert:
@@ -24,3 +14,11 @@ test:
 
 lint:
 	@golangci-lint run -c tools/.golangci.yml
+
+gqlgen:
+	@go run github.com/99designs/gqlgen generate --config tools/gqlgen.yml
+
+certs:
+	@mkdir -p .certs
+	@openssl genrsa -out .certs/key.pem 2048
+	@openssl rsa -in .certs/key.pem -pubout > .certs/key.pub

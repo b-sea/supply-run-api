@@ -6,16 +6,6 @@ issues:
 linters:
   enable-all: true
   disable:
-    - varcheck
-    - nosnakecase
-    - golint
-    - maligned
-    - structcheck
-    - scopelint
-    - deadcode
-    - ifshort
-    - exhaustivestruct
-    - interfacer
     - exhaustruct
     - depguard
     - testifylint
@@ -23,6 +13,12 @@ linters:
     - nlreturn
     - musttag
     - dupl
+    - execinquery
+    - gomnd
+    - exportloopref
+    - revive
+    - stylecheck
+    - wrapcheck
 
 linters-settings:
   cyclop:
@@ -43,6 +39,7 @@ linters-settings:
     ignore-chan-recv-ok: true
     ignore-names:
       - id
+      - ok
 
 run: 
   tests: false
