@@ -11,11 +11,7 @@ import (
 )
 
 func main() {
-	recorder := metrics.NewBasicLogger()
-
-	svr := server.NewServer(
-		recorder,
-	)
+	svr := server.NewServer(metrics.NewBasicLogger())
 	svr.Start()
 
 	channel := make(chan os.Signal, 1)
