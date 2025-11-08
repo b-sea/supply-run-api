@@ -10,32 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRecipeNewRecipe(t *testing.T) {
-	t.Parallel()
-
-	type testCase struct {
-		err error
-	}
-
-	testCases := map[string]testCase{
-		"success": {
-			err: nil,
-		},
-	}
-
-	for name, _ := range testCases {
-		t.Run(name, func(t *testing.T) {
-			// _, err = csplatform.NewRepository("", connector, test.options...)
-
-			// if test.err == nil {
-			// 	assert.NoError(t, err)
-			// } else {
-			// 	assert.ErrorIs(t, err, test.err)
-			// }
-		})
-	}
-}
-
 func TestSetName(t *testing.T) {
 	t.Parallel()
 

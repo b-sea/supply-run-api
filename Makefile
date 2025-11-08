@@ -24,6 +24,7 @@ setup-lint:
 	fi
 
 lint: setup-lint
+	@${GOLANGCILINT_PATH}/golangci-lint cache clean
 	@${GOLANGCILINT_PATH}/golangci-lint run -c tools/.golangci.yml
 
 
