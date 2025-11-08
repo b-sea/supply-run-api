@@ -35,6 +35,31 @@ func TestSetName(t *testing.T) {
 	assert.Equal(t, test.Name(), "new name")
 }
 
+func TestSetNumServings(t *testing.T) {
+	t.Parallel()
+
+	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	assert.NoError(t, err)
+
+	// Set number of servings
+	changed, err := recipe.SetNumServings(4)(test)
+	assert.True(t, changed)
+	assert.NoError(t, err)
+	assert.Equal(t, test.NumServings(), 4)
+
+	// Set number of servings to the same value
+	changed, err = recipe.SetNumServings(4)(test)
+	assert.False(t, changed)
+	assert.NoError(t, err)
+	assert.Equal(t, test.NumServings(), 4)
+
+	// Set number of servings to an invalid value
+	changed, err = recipe.SetNumServings(0)(test)
+	assert.True(t, changed)
+	assert.NoError(t, err)
+	assert.Equal(t, test.NumServings(), 1)
+}
+
 func TestAddStep(t *testing.T) {
 	t.Parallel()
 
@@ -81,31 +106,6 @@ func TestClearSteps(t *testing.T) {
 	assert.Equal(t, 0, len(test.Steps()))
 }
 
-func TestSetNumServings(t *testing.T) {
-	t.Parallel()
-
-	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
-	assert.NoError(t, err)
-
-	// Set number of servings
-	changed, err := recipe.SetNumServings(4)(test)
-	assert.True(t, changed)
-	assert.NoError(t, err)
-	assert.Equal(t, test.NumServings(), 4)
-
-	// Set number of servings to the same value
-	changed, err = recipe.SetNumServings(4)(test)
-	assert.False(t, changed)
-	assert.NoError(t, err)
-	assert.Equal(t, test.NumServings(), 4)
-
-	// Set number of servings to an invalid value
-	changed, err = recipe.SetNumServings(0)(test)
-	assert.True(t, changed)
-	assert.NoError(t, err)
-	assert.Equal(t, test.NumServings(), 1)
-}
-
 func TestAddIngredient(t *testing.T) {
 	t.Parallel()
 
@@ -132,8 +132,8 @@ func TestAddIngredient(t *testing.T) {
 	assert.Equal(t, float64(6), test.Ingredients()[1].Quantity())
 	assert.Equal(t, units.Liter, test.Ingredients()[1].Unit())
 
-	// Add a duplicate ingredient with a different unit
-	changed, err = recipe.AddIngredient("flour", 250, units.Gram)(test)
+	// Add a duplicate ingredient with a different unit, should be case-insensitive
+	changed, err = recipe.AddIngredient("fLoUR", 250, units.Gram)(test)
 	assert.True(t, changed)
 	assert.NoError(t, err)
 

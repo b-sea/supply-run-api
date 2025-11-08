@@ -29,11 +29,6 @@ func NewSeededID(seed []byte) ID {
 	}
 }
 
-// IsValid returns if an ID is valid.
-func (id ID) IsValid() bool {
-	return id.key != ""
-}
-
 func (id ID) String() string {
 	return id.key
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/b-sea/supply-run-api/internal/entity"
 )
 
-// Recipe is a cook book recipe.
+// Recipe is a cookbook recipe.
 type Recipe struct {
 	id          entity.ID
 	name        string

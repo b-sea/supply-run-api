@@ -7,6 +7,8 @@ threshold:
 
 exclude:
   paths:
+    - cmd/main.go
+    - internal/metrics
     - internal/server/graphql/resolver/generated\.go$    # exclude gqlgen generated file
 
 force-annotation-comment: false

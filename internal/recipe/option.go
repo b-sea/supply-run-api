@@ -3,6 +3,7 @@ package recipe
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	units "github.com/bcicen/go-units"
 )
@@ -89,7 +90,7 @@ func AddIngredient(name string, quantity float64, unit units.Unit) Option {
 		appended := false
 
 		for i := range r.ingredients {
-			if r.ingredients[i].name != name {
+			if !strings.EqualFold(r.ingredients[i].name, name) {
 				continue
 			}
 
