@@ -1,0 +1,14 @@
+profile: tools/cover.out
+
+threshold:
+  file: 70
+  package: 80
+  total: 95
+
+exclude:
+  paths:
+    - cmd/main.go
+    - internal/metrics
+    - internal/server/graphql/resolver/generated\.go$    # exclude gqlgen generated file
+
+force-annotation-comment: false

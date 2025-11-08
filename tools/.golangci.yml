@@ -5,6 +5,11 @@ linters:
 
   exclusions:
     rules:
+      # Options should allow dynamic errors.
+      - path: internal/recipe/option.go
+        linters:
+          - err113
+
       # Exclude some linters from running on gqlgen generated files.
       - path: internal/server/graphql/
         linters:
@@ -16,11 +21,17 @@ linters:
    - noinlineerr
    - exhaustruct
 
-settings:
-  wsl_v5:
-    allow-first-in-block: true
-    allow-whole-block: false
-    branch-max-lines: 2
+  settings:
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+    
+    varnamelen:
+      ignore-names:
+        - id
+        - r
+        - i
 
 issues:
   max-issues-per-linter: 0

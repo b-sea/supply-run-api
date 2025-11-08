@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/b-sea/supply-run-api/internal/server/graphql"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -66,10 +65,18 @@ func NewServer(recorder Recorder, options ...Option) *Server {
 	}
 
 	server.router.Use(server.metricsMiddleware())
-	server.router.Handle("/metrics", server.metricsHandler()).Methods(http.MethodGet)
-	server.router.Handle("/graphql", graphql.NewHandler(recorder)).Methods(http.MethodPost)
 
-	server.router.HandleFunc("/playground", playground.Handler("Supply Run Playground", "/graphql"))
+	server.router.Handle(
+		"/metrics",
+		func() http.HandlerFunc {
+			return func(writer http.ResponseWriter, request *http.Request) {
+				server.recorder.Handler().ServeHTTP(writer, request)
+			}
+		}(),
+	).Methods(http.MethodGet)
+
+	api := server.router.PathPrefix("/api").Subrouter()
+	api.Handle("/graphql", graphql.NewHandler(recorder)).Methods(http.MethodPost)
 
 	// Re-define the default NotFound handler so it passes through middleware correctly.
 	server.router.NotFoundHandler = server.router.NewRoute().HandlerFunc(http.NotFound).GetHandler()

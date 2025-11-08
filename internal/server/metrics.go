@@ -64,9 +64,3 @@ func (s *Server) metricsMiddleware() mux.MiddlewareFunc {
 		})
 	}
 }
-
-func (s *Server) metricsHandler() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		s.recorder.Handler().ServeHTTP(writer, request)
-	}
-}
