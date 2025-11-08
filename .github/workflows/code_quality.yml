@@ -23,7 +23,6 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.6.1
-          args: --config=./tools/.golangci.yml
 
   coverage:
     runs-on: ubuntu-latest
