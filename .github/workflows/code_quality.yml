@@ -34,7 +34,7 @@ jobs:
     - uses: actions/setup-go@v3
     
     - name: generate test coverage
-      run: GOTOOLCHAIN=go1.25.4+auto go test ./... -coverprofile=./cover.out -covermode=atomic ./...
+      run: GOTOOLCHAIN=go1.25.4+auto go test ./... -coverprofile=./tools/cover.out -covermode=atomic ./...
 
     - name: check test coverage
       uses: vladopajic/go-test-coverage@v2
