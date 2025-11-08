@@ -1,48 +1,31 @@
-issues:
-  max-per-linter: 0
-  max-same-issues: 0
-  exclude-use-default: false
+version: "2"
 
 linters:
-  enable-all: true
+  default: all
+
+  exclusions:
+    rules:
+      # Exclude some linters from running on gqlgen generated files.
+      - path: internal/server/graphql/
+        linters:
+          - ireturn
+
   disable:
-    - varcheck
-    - nosnakecase
-    - golint
-    - maligned
-    - structcheck
-    - scopelint
-    - deadcode
-    - ifshort
-    - exhaustivestruct
-    - interfacer
-    - exhaustruct
-    - depguard
-    - testifylint
-    - godox
-    - nlreturn
-    - musttag
-    - dupl
+   - wsl
+   - depguard
+   - noinlineerr
+   - exhaustruct
 
-linters-settings:
-  cyclop:
-    max-complexity: 18
-    package-average: 10.0
+settings:
+  wsl_v5:
+    allow-first-in-block: true
+    allow-whole-block: false
+    branch-max-lines: 2
 
-  tagliatelle:
-    case:
-      use-field-name: true
-      rules:
-        json: camel
-        yaml: camel
-        mapstructure: camel
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
 
-  varnamelen:
-    ignore-type-assert-ok: true
-    ignore-map-ok: true
-    ignore-chan-recv-ok: true
-    ignore-names:
-      - id
 
-run: 
+run:
   tests: false

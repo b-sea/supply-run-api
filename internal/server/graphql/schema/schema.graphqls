@@ -1,0 +1,15 @@
+directive @goField(
+    forceResolver: Boolean
+    name: String
+    omittable: Boolean
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+scalar Time
+
+extend type Query {
+  temp: String!
+}
+
+extend type Mutation {
+  temp: String!
+}
