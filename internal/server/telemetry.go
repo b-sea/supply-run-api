@@ -42,6 +42,9 @@ func (w *telemetryWriter) Write(p []byte) (int, error) {
 func telemetryMiddleware(recorder Recorder) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			start := time.Now()
+			log := logger.Get()
+
 			path, err := mux.CurrentRoute(request).GetPathTemplate()
 			if err != nil {
 				path = request.URL.Path
@@ -52,9 +55,6 @@ func telemetryMiddleware(recorder Recorder) mux.MiddlewareFunc {
 				StatusCode:     http.StatusOK,
 				Size:           0,
 			}
-
-			start := time.Now()
-			log := logger.Get()
 
 			defer func() {
 				duration := time.Since(start)
