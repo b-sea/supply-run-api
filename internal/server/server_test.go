@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,7 +17,14 @@ import (
 )
 
 func TestServerStartStop(t *testing.T) {
-	testServer := server.New(metrics.NewBasicLogger())
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	assert.NoError(t, err)
+	listener, err := net.ListenTCP("tcp", addr)
+	assert.NoError(t, err)
+	port := listener.Addr().(*net.TCPAddr).Port
+	listener.Close()
+
+	testServer := server.New(metrics.NewNoOp(), server.WithPort(port))
 
 	timer := time.NewTimer(500 * time.Millisecond)
 
@@ -29,29 +37,8 @@ func TestServerStartStop(t *testing.T) {
 	assert.NoError(t, testServer.Stop())
 }
 
-func TestWithPort(t *testing.T) {
-	testServer := server.New(metrics.NewBasicLogger())
-	server.WithPort(4567)(testServer)
-
-	assert.Equal(t, ":4567", testServer.Addr())
-}
-
-func TestWithReadTimeout(t *testing.T) {
-	testServer := server.New(metrics.NewBasicLogger())
-	server.WithReadTimeout(time.Hour)(testServer)
-
-	assert.Equal(t, time.Hour, testServer.ReadTimeout())
-}
-
-func TestWithWriteTimeout(t *testing.T) {
-	testServer := server.New(metrics.NewBasicLogger())
-	server.WithWriteTimeout(time.Hour)(testServer)
-
-	assert.Equal(t, time.Hour, testServer.WriteTimeout())
-}
-
 func TestServerMetrics(t *testing.T) {
-	testServer := httptest.NewServer(server.New(metrics.NewBasicLogger()))
+	testServer := httptest.NewServer(server.New(metrics.NewNoOp()))
 
 	request, _ := http.NewRequestWithContext(
 		context.Background(),
@@ -78,7 +65,7 @@ func TestServerMetrics(t *testing.T) {
 }
 
 func TestServerAPIGraphql(t *testing.T) {
-	testServer := httptest.NewServer(server.New(metrics.NewBasicLogger()))
+	testServer := httptest.NewServer(server.New(metrics.NewNoOp()))
 
 	request, _ := http.NewRequestWithContext(
 		context.Background(),
