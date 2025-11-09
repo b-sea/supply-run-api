@@ -3,6 +3,7 @@ package recipe
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	units "github.com/bcicen/go-units"
@@ -25,6 +26,25 @@ func SetName(name string) Option {
 		}
 
 		r.name = name
+
+		return true, nil
+	}
+}
+
+// SetURL sets the Recipe url.
+// Error cases:
+//   - URL is not a valid url format
+func SetURL(value string) Option {
+	return func(r *Recipe) (bool, error) {
+		if _, err := url.ParseRequestURI(value); err != nil {
+			return false, errors.New("recipe url must be a valid url")
+		}
+
+		if r.url == value {
+			return false, nil
+		}
+
+		r.url = value
 
 		return true, nil
 	}
@@ -127,6 +147,42 @@ func ClearIngredients() Option {
 		}
 
 		r.ingredients = make([]Ingredient, 0)
+
+		return true, nil
+	}
+}
+
+// AddTag adds a Recipe tag.
+// Error cases:
+//   - Name is empty
+func AddTag(name string) Option {
+	return func(r *Recipe) (bool, error) {
+		if name == "" {
+			return false, errors.New("tag name cannot be empty")
+		}
+
+		for i := range r.tags {
+			if !strings.EqualFold(r.tags[i], name) {
+				continue
+			}
+
+			return false, nil
+		}
+
+		r.tags = append(r.tags, name)
+
+		return true, nil
+	}
+}
+
+// ClearTags removes all Recipe tags.
+func ClearTags() Option {
+	return func(r *Recipe) (bool, error) {
+		if len(r.tags) == 0 {
+			return false, nil
+		}
+
+		r.tags = make([]string, 0)
 
 		return true, nil
 	}
