@@ -10,12 +10,12 @@ import (
 
 // Temp is the resolver for the temp field.
 func (r *mutationResolver) Temp(_ context.Context) (string, error) {
-	return "temp mutation", nil
+	return "mutation", nil
 }
 
 // Temp is the resolver for the temp field.
 func (r *queryResolver) Temp(_ context.Context) (string, error) {
-	return "temp query", nil
+	return "query", nil
 }
 
 // Mutation returns MutationResolver implementation.

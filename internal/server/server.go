@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultPort    = 5000
-	defaultTimeout = time.Minute
+	defaultTimeout = 10 * time.Second
 )
 
 // Option is a creation option for a Server.
@@ -29,11 +29,17 @@ func WithPort(port int) Option {
 	}
 }
 
-// WithTimeout overrides the HTTP read and write timeouts for the Server.
-func WithTimeout(duration time.Duration) Option {
+// WithReadTimeout overrides the HTTP read and read header timeouts for the Server.
+func WithReadTimeout(duration time.Duration) Option {
 	return func(server *Server) {
 		server.http.ReadTimeout = duration
 		server.http.ReadHeaderTimeout = duration
+	}
+}
+
+// WithWriteTimeout overrides the HTTP write timeout for the Server.
+func WithWriteTimeout(duration time.Duration) Option {
+	return func(server *Server) {
 		server.http.WriteTimeout = duration
 	}
 }
@@ -41,67 +47,85 @@ func WithTimeout(duration time.Duration) Option {
 // Server is a supply-run API web server.
 type Server struct {
 	http      *http.Server
-	router    *mux.Router
 	validator *validator.Validate
-	recorder  Recorder
 }
 
-// NewServer creates a new Server.
-func NewServer(recorder Recorder, options ...Option) *Server {
+// New creates a new Server.
+func New(recorder Recorder, options ...Option) *Server {
 	server := &Server{
 		http: &http.Server{
 			Addr:              fmt.Sprintf(":%d", defaultPort),
 			ReadTimeout:       defaultTimeout,
 			ReadHeaderTimeout: defaultTimeout,
 			WriteTimeout:      defaultTimeout,
+			Handler:           mux.NewRouter(),
 		},
-		router:    mux.NewRouter(),
 		validator: validator.New(),
-		recorder:  recorder,
 	}
 
 	for _, option := range options {
 		option(server)
 	}
 
-	server.router.Use(server.metricsMiddleware())
+	router := mux.NewRouter()
+	router.Use(metricsMiddleware(recorder))
 
-	server.router.Handle(
+	router.Handle(
 		"/metrics",
 		func() http.HandlerFunc {
 			return func(writer http.ResponseWriter, request *http.Request) {
-				server.recorder.Handler().ServeHTTP(writer, request)
+				recorder.Handler().ServeHTTP(writer, request)
 			}
 		}(),
 	).Methods(http.MethodGet)
 
-	api := server.router.PathPrefix("/api").Subrouter()
+	api := router.PathPrefix("/api").Subrouter()
 	api.Handle("/graphql", graphql.NewHandler(recorder)).Methods(http.MethodPost)
 
 	// Re-define the default NotFound handler so it passes through middleware correctly.
-	server.router.NotFoundHandler = server.router.NewRoute().HandlerFunc(http.NotFound).GetHandler()
-	server.http.Handler = server.router
+	router.NotFoundHandler = router.NewRoute().HandlerFunc(http.NotFound).GetHandler()
+
+	server.http.Handler = router
 
 	return server
 }
 
-// Start the Server.
-func (s *Server) Start() {
-	go func() {
-		logrus.Infof("Starting server %s", s.http.Addr)
+// Addr returns the server address.
+func (s *Server) Addr() string {
+	return s.http.Addr
+}
 
-		if err := s.http.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			panic(err)
-		}
-	}()
+// ReadTimeout returns the server read and read header timeout.
+func (s *Server) ReadTimeout() time.Duration {
+	return s.http.ReadTimeout
+}
+
+// WriteTimeout returns the server write timeout.
+func (s *Server) WriteTimeout() time.Duration {
+	return s.http.WriteTimeout
+}
+
+func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	s.http.Handler.ServeHTTP(writer, request)
+}
+
+// Start the Server.
+func (s *Server) Start() error {
+	logrus.Infof("Starting server %s", s.http.Addr)
+
+	if err := s.http.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		return err //nolint: wrapcheck
+	}
+
+	return nil
 }
 
 // Stop the Server.
-func (s *Server) Stop() {
+func (s *Server) Stop() error {
+	logrus.Infof("Stopping server %s", s.http.Addr)
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	if err := s.http.Shutdown(ctx); err != nil {
-		panic(err)
-	}
+	return s.http.Shutdown(ctx) //nolint: wrapcheck
 }
