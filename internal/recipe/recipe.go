@@ -11,9 +11,11 @@ import (
 type Recipe struct {
 	id          entity.ID
 	name        string
+	url         string
 	numServings int
 	steps       []string
 	ingredients []Ingredient
+	tags        []string
 
 	createdAt time.Time
 	createdBy entity.ID
@@ -29,6 +31,7 @@ func New(id entity.ID, name string, timestamp time.Time, userID entity.ID, optio
 		numServings: 0,
 		steps:       make([]string, 0),
 		ingredients: make([]Ingredient, 0),
+		tags:        make([]string, 0),
 		createdAt:   timestamp,
 		createdBy:   userID,
 		updatedAt:   timestamp,
@@ -103,6 +106,11 @@ func (r *Recipe) Name() string {
 	return r.name
 }
 
+// URL returns the Recipe source url.
+func (r *Recipe) URL() string {
+	return r.url
+}
+
 // NumServings returns the number of servings in the Recipe.
 func (r *Recipe) NumServings() int {
 	return r.numServings
@@ -116,6 +124,11 @@ func (r *Recipe) Steps() []string {
 // Ingredients returns the Recipe ingredients.
 func (r *Recipe) Ingredients() []Ingredient {
 	return r.ingredients
+}
+
+// Tags returns the Recipe tags.
+func (r *Recipe) Tags() []string {
+	return r.tags
 }
 
 // CreatedAt returns when the Recipe was created.

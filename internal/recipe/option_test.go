@@ -20,19 +20,44 @@ func TestSetName(t *testing.T) {
 	changed, err := recipe.SetName("")(test)
 	assert.False(t, changed)
 	assert.Error(t, err)
-	assert.Equal(t, test.Name(), "test")
+	assert.Equal(t, "test", test.Name())
 
 	// Set the name
 	changed, err = recipe.SetName("new name")(test)
 	assert.True(t, changed)
 	assert.NoError(t, err)
-	assert.Equal(t, test.Name(), "new name")
+	assert.Equal(t, "new name", test.Name())
 
 	// Set the name to the same value
 	changed, err = recipe.SetName("new name")(test)
 	assert.False(t, changed)
 	assert.NoError(t, err)
-	assert.Equal(t, test.Name(), "new name")
+	assert.Equal(t, "new name", test.Name())
+}
+
+func TestSetURL(t *testing.T) {
+	t.Parallel()
+
+	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	assert.NoError(t, err)
+
+	// Set the URL
+	changed, err := recipe.SetURL("http://test.org/my/recipe")(test)
+	assert.True(t, changed)
+	assert.NoError(t, err)
+	assert.Equal(t, "http://test.org/my/recipe", test.URL())
+
+	// Set a non-URL
+	changed, err = recipe.SetURL("i am not.a-url")(test)
+	assert.False(t, changed)
+	assert.Error(t, err)
+	assert.Equal(t, "http://test.org/my/recipe", test.URL())
+
+	// Set the URL to the same value
+	changed, err = recipe.SetURL("http://test.org/my/recipe")(test)
+	assert.False(t, changed)
+	assert.NoError(t, err)
+	assert.Equal(t, "http://test.org/my/recipe", test.URL())
 }
 
 func TestSetNumServings(t *testing.T) {
@@ -45,19 +70,19 @@ func TestSetNumServings(t *testing.T) {
 	changed, err := recipe.SetNumServings(4)(test)
 	assert.True(t, changed)
 	assert.NoError(t, err)
-	assert.Equal(t, test.NumServings(), 4)
+	assert.Equal(t, 4, test.NumServings())
 
 	// Set number of servings to the same value
 	changed, err = recipe.SetNumServings(4)(test)
 	assert.False(t, changed)
 	assert.NoError(t, err)
-	assert.Equal(t, test.NumServings(), 4)
+	assert.Equal(t, 4, test.NumServings())
 
 	// Set number of servings to an invalid value
 	changed, err = recipe.SetNumServings(0)(test)
 	assert.True(t, changed)
 	assert.NoError(t, err)
-	assert.Equal(t, test.NumServings(), 1)
+	assert.Equal(t, 1, test.NumServings())
 }
 
 func TestAddStep(t *testing.T) {
@@ -185,4 +210,63 @@ func TestClearIngredients(t *testing.T) {
 	assert.False(t, changed)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(test.Ingredients()))
+}
+
+func TestAddTag(t *testing.T) {
+	t.Parallel()
+
+	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	assert.NoError(t, err)
+
+	// Add a tag
+	changed, err := recipe.AddTag("tasty")(test)
+	assert.True(t, changed)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(test.Tags()))
+	assert.Equal(t, "tasty", test.Tags()[0])
+
+	// Add the same tag again with different casing
+	changed, err = recipe.AddTag("tAsTy")(test)
+	assert.False(t, changed)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(test.Tags()))
+	assert.Equal(t, "tasty", test.Tags()[0])
+
+	// Add an empty tag
+	changed, err = recipe.AddTag("")(test)
+	assert.False(t, changed)
+	assert.Error(t, err)
+
+	// Add a different tag
+	changed, err = recipe.AddTag("not tasty")(test)
+	assert.True(t, changed)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, len(test.Tags()))
+	assert.Equal(t, "not tasty", test.Tags()[1])
+}
+
+func TestClearTags(t *testing.T) {
+	t.Parallel()
+
+	test, err := recipe.New(
+		entity.NewID(), "test", time.Now(), entity.NewID(),
+		recipe.AddTag("tasty"),
+		recipe.AddTag("not tasty"),
+	)
+	assert.NoError(t, err)
+
+	// Clearing tags should report a change
+	changed, err := recipe.ClearTags()(test)
+	assert.True(t, changed)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(test.Tags()))
+
+	// Clearing tags again should report no change
+	changed, err = recipe.ClearTags()(test)
+	assert.False(t, changed)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(test.Tags()))
 }

@@ -1,8 +1,12 @@
 package entity
 
 import (
+	"errors"
 	"strings"
 )
+
+// ErrNotFound is raised when an entity cannot be found.
+var ErrNotFound = errors.New("not found")
 
 // ValidationError is holds validation errors.
 type ValidationError struct {
