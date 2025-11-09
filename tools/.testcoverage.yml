@@ -9,6 +9,9 @@ exclude:
   paths:
     - cmd/main.go
     - internal/metrics
-    - internal/server/graphql/resolver/generated\.go$    # exclude gqlgen generated file
+    # exclude gqlgen generated file
+    - internal/server/graphql/resolver/generated\.go$
+    # exclude gqlgen generated models
+    - internal/server/graphql/model
 
 force-annotation-comment: false

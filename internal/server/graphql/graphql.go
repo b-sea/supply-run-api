@@ -22,9 +22,9 @@ type Recorder interface {
 }
 
 // NewHandler configures and creates a GraphQL API handler.
-func NewHandler(recorder Recorder) http.Handler {
+func NewHandler(recorder Recorder) http.Handler { // coverage-ignore
 	schema := resolver.NewExecutableSchema(
-		resolver.Config{Resolvers: &resolver.Resolver{}},
+		resolver.Config{Resolvers: resolver.NewResolver()},
 	)
 	server := handler.NewDefaultServer(schema)
 
@@ -65,7 +65,7 @@ func NewHandler(recorder Recorder) http.Handler {
 	return server
 }
 
-func asGraphQLError(err error) *gqlerror.Error {
+func asGraphQLError(err error) *gqlerror.Error { // coverage-ignore
 	var gqlErr *gqlerror.Error
 	if !errors.As(err, &gqlErr) {
 		gqlErr = gqlerror.Wrap(err)

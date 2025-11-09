@@ -37,7 +37,7 @@ func (w *metricsWriter) Write(p []byte) (int, error) {
 	return w.ResponseWriter.Write(p) //nolint: wrapcheck
 }
 
-func (s *Server) metricsMiddleware() mux.MiddlewareFunc {
+func metricsMiddleware(recorder Recorder) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			path, err := mux.CurrentRoute(request).GetPathTemplate()
@@ -56,8 +56,8 @@ func (s *Server) metricsMiddleware() mux.MiddlewareFunc {
 			defer func() {
 				code := strconv.Itoa(hijack.StatusCode)
 
-				s.recorder.ObserveRequestDuration(request.Method, path, code, time.Since(start))
-				s.recorder.ObserveResponseSize(request.Method, path, code, int64(hijack.Size))
+				recorder.ObserveRequestDuration(request.Method, path, code, time.Since(start))
+				recorder.ObserveResponseSize(request.Method, path, code, int64(hijack.Size))
 			}()
 
 			next.ServeHTTP(hijack, request)
