@@ -68,7 +68,7 @@ func TestServerMetrics(t *testing.T) {
 	body, err := io.ReadAll(response.Body)
 	assert.NoError(t, err)
 
-	response.Body.Close()
+	assert.NoError(t, response.Body.Close())
 
 	assert.Equal(t, http.StatusOK, response.StatusCode)
 	assert.Equal(t, "", response.Header.Get("Content-Type"))
@@ -96,7 +96,7 @@ func TestServerAPIGraphql(t *testing.T) {
 	body, err := io.ReadAll(response.Body)
 	assert.NoError(t, err)
 
-	response.Body.Close()
+	assert.NoError(t, response.Body.Close())
 
 	assert.Equal(t, http.StatusUnprocessableEntity, response.StatusCode)
 	assert.Equal(t, "application/json", response.Header.Get("Content-Type"))
