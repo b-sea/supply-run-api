@@ -6,43 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/b-sea/supply-run-api/internal/server/graphql"
+	"github.com/b-sea/supply-run-api/pkg/logger"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 )
 
 const (
 	defaultPort    = 5000
 	defaultTimeout = 10 * time.Second
 )
-
-// Option is a creation option for a Server.
-type Option func(server *Server)
-
-// WithPort overrides the port used by the Server.
-func WithPort(port int) Option {
-	return func(server *Server) {
-		server.http.Addr = fmt.Sprintf(":%d", port)
-	}
-}
-
-// WithReadTimeout overrides the HTTP read and read header timeouts for the Server.
-func WithReadTimeout(duration time.Duration) Option {
-	return func(server *Server) {
-		server.http.ReadTimeout = duration
-		server.http.ReadHeaderTimeout = duration
-	}
-}
-
-// WithWriteTimeout overrides the HTTP write timeout for the Server.
-func WithWriteTimeout(duration time.Duration) Option {
-	return func(server *Server) {
-		server.http.WriteTimeout = duration
-	}
-}
 
 // Server is a supply-run API web server.
 type Server struct {
@@ -58,7 +34,6 @@ func New(recorder Recorder, options ...Option) *Server {
 			ReadTimeout:       defaultTimeout,
 			ReadHeaderTimeout: defaultTimeout,
 			WriteTimeout:      defaultTimeout,
-			Handler:           mux.NewRouter(),
 		},
 		validator: validator.New(),
 	}
@@ -68,7 +43,7 @@ func New(recorder Recorder, options ...Option) *Server {
 	}
 
 	router := mux.NewRouter()
-	router.Use(metricsMiddleware(recorder))
+	router.Use(telemetryMiddleware(recorder))
 
 	router.Handle(
 		"/metrics",
@@ -84,8 +59,35 @@ func New(recorder Recorder, options ...Option) *Server {
 
 	// Re-define the default NotFound handler so it passes through middleware correctly.
 	router.NotFoundHandler = router.NewRoute().HandlerFunc(http.NotFound).GetHandler()
-
 	server.http.Handler = router
+
+	log := logger.Get()
+
+	_ = router.Walk(func(route *mux.Route, _ *mux.Router, _ []*mux.Route) error {
+		if route.GetHandler() == nil {
+			return nil
+		}
+
+		template, err := route.GetPathTemplate()
+		if err != nil {
+			return nil //nolint: nilerr
+		}
+
+		methods, _ := route.GetMethods()
+		if len(methods) == 0 {
+			log.Debug().Str("url", template).Msg("route registered")
+
+			return nil
+		}
+
+		slices.Sort(methods)
+
+		for i := range methods {
+			log.Debug().Str("method", methods[i]).Str("url", template).Msg("route registered")
+		}
+
+		return nil
+	})
 
 	return server
 }
@@ -111,7 +113,8 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 // Start the Server.
 func (s *Server) Start() error {
-	logrus.Infof("Starting server %s", s.http.Addr)
+	log := logger.Get()
+	log.Info().Str("addr", s.http.Addr).Msg("starting server")
 
 	if err := s.http.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err //nolint: wrapcheck
@@ -122,7 +125,8 @@ func (s *Server) Start() error {
 
 // Stop the Server.
 func (s *Server) Stop() error {
-	logrus.Infof("Stopping server %s", s.http.Addr)
+	log := logger.Get()
+	log.Info().Str("addr", s.http.Addr).Msg("stopping server")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()

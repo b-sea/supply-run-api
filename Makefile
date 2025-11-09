@@ -30,6 +30,3 @@ lint: setup-lint
 
 gqlgen:
 	@go run github.com/99designs/gqlgen generate --config tools/gqlgen.yml
-
-clean:
-	rm -rf cover.out

@@ -8,26 +8,27 @@ import (
 
 	"github.com/b-sea/supply-run-api/internal/metrics"
 	"github.com/b-sea/supply-run-api/internal/server"
-	"github.com/sirupsen/logrus"
+	"github.com/b-sea/supply-run-api/pkg/logger"
 )
 
 func main() {
-	svr := server.New(metrics.NewBasicLogger())
+	log := logger.Get()
+	svr := server.New(metrics.NewNoOp())
 
 	channel := make(chan os.Signal, 1)
 	signal.Notify(channel, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		if err := svr.Start(); err != nil {
-			logrus.Fatalf("error starting server: %v", err)
+			log.Fatal().Err(err).Msg("error starting server")
 		}
 	}()
 
 	<-channel
 
 	if err := svr.Stop(); err != nil {
-		logrus.Fatalf("server forced to shutdown: %v", err)
+		log.Fatal().Err(err).Msg("server forced to shutdown")
 	}
 
-	logrus.Info("server gracefully stopped")
+	log.Info().Msgf("server gracefully stopped")
 }
