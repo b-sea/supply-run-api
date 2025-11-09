@@ -19,10 +19,12 @@ import (
 func TestServerStartStop(t *testing.T) {
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
 	assert.NoError(t, err)
+
 	listener, err := net.ListenTCP("tcp", addr)
 	assert.NoError(t, err)
+
 	port := listener.Addr().(*net.TCPAddr).Port
-	listener.Close()
+	assert.NoError(t, listener.Close())
 
 	testServer := server.New(metrics.NewNoOp(), server.WithPort(port))
 
