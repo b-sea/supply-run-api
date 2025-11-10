@@ -4,6 +4,10 @@ linters:
   default: all
 
   exclusions:
+    paths:
+      # Skip mocks completely
+      - internal/mock
+
     rules:
       - path: cmd/main.go
         linters:
@@ -40,7 +44,6 @@ linters:
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-
 
 run:
   tests: false

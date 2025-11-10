@@ -8,13 +8,14 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
-	"github.com/rs/zerolog"
+	"github.com/b-sea/go-logger/logger"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 	return func(ctx context.Context, next graphql.Resolver) (any, error) {
 		start := time.Now()
+		log := logger.FromContext(ctx)
 		result, err := next(ctx)
 
 		field := graphql.GetFieldContext(ctx)
@@ -29,7 +30,7 @@ func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 				status = "failed"
 				code, _ := asGraphQLError(err).Extensions["code"].(string)
 				recorder.ObserveResolverError(field.Object, field.Field.Name, code)
-				zerolog.Ctx(ctx).Info().
+				log.Info().
 					Str("object", field.Object).
 					Str("field", field.Field.Name).
 					Str("err_code", code).
@@ -38,7 +39,7 @@ func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 
 			duration := time.Since(start)
 
-			zerolog.Ctx(ctx).Info().
+			log.Info().
 				Str("object", field.Object).
 				Str("field", field.Field.Name).
 				Str("status", status).

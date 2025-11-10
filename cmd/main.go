@@ -71,6 +71,7 @@ func main() {
 
 func configFile() string {
 	configFile, _ := os.LookupEnv(cfgEnvPrefix + "_CONFIGFILE")
+
 	return configFile
 }
 

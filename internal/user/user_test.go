@@ -11,7 +11,7 @@ import (
 func TestNewUser(t *testing.T) {
 	t.Parallel()
 
-	id := entity.NewID()
+	id := entity.NewID("user-123")
 	test := user.New(id, "tester")
 
 	assert.Equal(t, id, test.ID())
