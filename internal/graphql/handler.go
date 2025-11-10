@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/b-sea/supply-run-api/internal/server/graphql/resolver"
+	"github.com/b-sea/supply-run-api/internal/graphql/resolver"
 )
 
 // Recorder defines functions for tracking GraphQL-based metrics.
@@ -16,7 +16,7 @@ type Recorder interface {
 }
 
 // NewHandler configures and creates a GraphQL API handler.
-func NewHandler(recorder Recorder) http.Handler { // coverage-ignore
+func NewHandler(recorder Recorder) http.Handler {
 	schema := resolver.NewExecutableSchema(
 		resolver.Config{Resolvers: resolver.NewResolver()},
 	)

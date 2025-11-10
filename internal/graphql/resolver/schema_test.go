@@ -6,7 +6,7 @@ import (
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/b-sea/supply-run-api/internal/server/graphql/resolver"
+	"github.com/b-sea/supply-run-api/internal/graphql/resolver"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -8,12 +8,10 @@ threshold:
 exclude:
   paths:
     - cmd/main.go
-    # exlude telemetry
     - internal/metrics
-    - pkg/logger
-    # exclude gqlgen generated file
-    - internal/server/graphql/resolver/generated\.go$
-    # exclude gqlgen generated models
-    - internal/server/graphql/model
+    - internal/graphql/handler\.go
+    - internal/graphql/telemetry\.go
+    - internal/graphql/model
+    - internal/graphql/resolver/generated\.go
 
-force-annotation-comment: false
+force-annotation-comment: true

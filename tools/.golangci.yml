@@ -5,13 +5,17 @@ linters:
 
   exclusions:
     rules:
-      # Options should allow dynamic errors.
+      - path: cmd/main.go
+        linters:
+          - mnd
+
+      # Domain options should allow dynamic errors.
       - path: internal/recipe/option.go
         linters:
           - err113
 
       # Exclude some linters from running on gqlgen generated files.
-      - path: internal/server/graphql/
+      - path: internal/graphql/
         linters:
           - ireturn
 

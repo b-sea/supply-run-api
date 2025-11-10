@@ -12,7 +12,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
-func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware { // coverage-ignore
+func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 	return func(ctx context.Context, next graphql.Resolver) (any, error) {
 		start := time.Now()
 		result, err := next(ctx)
