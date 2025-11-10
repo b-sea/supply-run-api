@@ -54,8 +54,7 @@ func New(recorder Recorder, options ...Option) *Server {
 		}(),
 	).Methods(http.MethodGet)
 
-	api := router.PathPrefix("/api").Subrouter()
-	api.Handle("/graphql", graphql.NewHandler(recorder)).Methods(http.MethodPost)
+	router.Handle("/graphql", graphql.NewHandler(recorder)).Methods(http.MethodPost)
 
 	// Re-define the default NotFound handler so it passes through middleware correctly.
 	router.NotFoundHandler = router.NewRoute().HandlerFunc(http.NotFound).GetHandler()

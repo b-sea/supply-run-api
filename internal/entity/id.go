@@ -12,16 +12,23 @@ type ID struct {
 	key string
 }
 
-// NewID generates a new random ID.
-func NewID() ID {
+// NewID creates a new ID from a string.
+func NewID(key string) ID {
+	return ID{
+		key: key,
+	}
+}
+
+// NewRandomID generates a new random ID.
+func NewRandomID() ID {
 	return ID{
 		key: shortuuid.New(),
 	}
 }
 
 // NewSeededID generates a pre-determined ID from a seed.
-func NewSeededID(seed []byte) ID {
-	hash := xxh3.Hash128(seed).Bytes()
+func NewSeededID(seed string) ID {
+	hash := xxh3.Hash128([]byte(seed)).Bytes()
 	key, _ := uuid.FromBytes(hash[:])
 
 	return ID{

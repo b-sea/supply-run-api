@@ -9,6 +9,7 @@ exclude:
   paths:
     - cmd/main.go
     - internal/metrics
+    - internal/mock
     - internal/graphql/handler\.go
     - internal/graphql/telemetry\.go
     - internal/graphql/model

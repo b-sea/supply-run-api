@@ -72,7 +72,7 @@ func TestServerAPIGraphql(t *testing.T) {
 	request, _ := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodPost,
-		fmt.Sprintf("%s/api/graphql", testServer.URL),
+		fmt.Sprintf("%s/graphql", testServer.URL),
 		strings.NewReader(`{}`),
 	)
 

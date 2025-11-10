@@ -13,7 +13,7 @@ import (
 func TestSetName(t *testing.T) {
 	t.Parallel()
 
-	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	test, err := recipe.New(entity.NewRandomID(), "test", time.Now(), entity.NewRandomID())
 	assert.NoError(t, err)
 
 	// Set an empty name
@@ -38,7 +38,7 @@ func TestSetName(t *testing.T) {
 func TestSetURL(t *testing.T) {
 	t.Parallel()
 
-	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	test, err := recipe.New(entity.NewRandomID(), "test", time.Now(), entity.NewRandomID())
 	assert.NoError(t, err)
 
 	// Set the URL
@@ -63,7 +63,7 @@ func TestSetURL(t *testing.T) {
 func TestSetNumServings(t *testing.T) {
 	t.Parallel()
 
-	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	test, err := recipe.New(entity.NewRandomID(), "test", time.Now(), entity.NewRandomID())
 	assert.NoError(t, err)
 
 	// Set number of servings
@@ -88,7 +88,7 @@ func TestSetNumServings(t *testing.T) {
 func TestAddStep(t *testing.T) {
 	t.Parallel()
 
-	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	test, err := recipe.New(entity.NewRandomID(), "test", time.Now(), entity.NewRandomID())
 	assert.NoError(t, err)
 
 	// Add a step
@@ -112,7 +112,7 @@ func TestClearSteps(t *testing.T) {
 	t.Parallel()
 
 	test, err := recipe.New(
-		entity.NewID(), "test", time.Now(), entity.NewID(),
+		entity.NewRandomID(), "test", time.Now(), entity.NewRandomID(),
 		recipe.AddStep("make sandwich"),
 		recipe.AddStep("eat sandwich"),
 	)
@@ -134,7 +134,7 @@ func TestClearSteps(t *testing.T) {
 func TestAddIngredient(t *testing.T) {
 	t.Parallel()
 
-	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	test, err := recipe.New(entity.NewRandomID(), "test", time.Now(), entity.NewRandomID())
 	assert.NoError(t, err)
 
 	// Add an ingredient
@@ -193,7 +193,7 @@ func TestClearIngredients(t *testing.T) {
 	t.Parallel()
 
 	test, err := recipe.New(
-		entity.NewID(), "test", time.Now(), entity.NewID(),
+		entity.NewRandomID(), "test", time.Now(), entity.NewRandomID(),
 		recipe.AddIngredient("flour", 2, units.Pound),
 		recipe.AddIngredient("water", 6, units.Liter),
 	)
@@ -215,7 +215,7 @@ func TestClearIngredients(t *testing.T) {
 func TestAddTag(t *testing.T) {
 	t.Parallel()
 
-	test, err := recipe.New(entity.NewID(), "test", time.Now(), entity.NewID())
+	test, err := recipe.New(entity.NewRandomID(), "test", time.Now(), entity.NewRandomID())
 	assert.NoError(t, err)
 
 	// Add a tag
@@ -252,7 +252,7 @@ func TestClearTags(t *testing.T) {
 	t.Parallel()
 
 	test, err := recipe.New(
-		entity.NewID(), "test", time.Now(), entity.NewID(),
+		entity.NewRandomID(), "test", time.Now(), entity.NewRandomID(),
 		recipe.AddTag("tasty"),
 		recipe.AddTag("not tasty"),
 	)
