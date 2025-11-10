@@ -1,0 +1,13 @@
+server:
+  port: 5000
+  readTimeout: 5
+  writeTimeout: 5
+
+logger: 
+  level: "info"
+  rotation:
+    filePath: "./log/supply_run_api.log"
+    maxSize: 10
+    maxBackups: 5
+    maxAge: 14
+    compress: True

@@ -9,8 +9,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/b-sea/supply-run-api/internal/server/graphql"
-	"github.com/b-sea/supply-run-api/pkg/logger"
+	"github.com/b-sea/go-logger/logger"
+	"github.com/b-sea/supply-run-api/internal/graphql"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
