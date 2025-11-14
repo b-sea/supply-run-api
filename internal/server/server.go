@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/b-sea/supply-run-api/internal/graphql"
+	"github.com/b-sea/supply-run-api/internal/query"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
@@ -28,7 +29,7 @@ type Server struct {
 }
 
 // New creates a new Server.
-func New(log zerolog.Logger, recorder Recorder, options ...Option) *Server {
+func New(queries *query.Service, log zerolog.Logger, recorder Recorder, options ...Option) *Server {
 	server := &Server{
 		http: &http.Server{
 			Addr:              fmt.Sprintf(":%d", defaultPort),
@@ -56,7 +57,7 @@ func New(log zerolog.Logger, recorder Recorder, options ...Option) *Server {
 		}(),
 	).Methods(http.MethodGet)
 
-	router.Handle("/graphql", graphql.NewHandler(recorder)).Methods(http.MethodPost)
+	router.Handle("/graphql", graphql.NewHandler(queries, recorder)).Methods(http.MethodPost)
 
 	// Re-define the default NotFound handler so it passes through middleware correctly.
 	router.NotFoundHandler = router.NewRoute().HandlerFunc(http.NotFound).GetHandler()
