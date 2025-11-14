@@ -22,7 +22,11 @@ type QueryRepository struct {
 	GetUsersErr          error
 }
 
-func (m *QueryRepository) FindRecipes(ctx context.Context, filter *query.RecipeFilter, page *query.Pagination) ([]*query.Recipe, error) {
+func (m *QueryRepository) FindRecipes(
+	ctx context.Context,
+	filter query.RecipeFilter,
+	page query.Pagination,
+) ([]*query.Recipe, error) {
 	return m.FindRecipesResult, m.FindRecipesErr
 }
 

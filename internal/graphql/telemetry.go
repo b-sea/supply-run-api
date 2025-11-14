@@ -8,14 +8,14 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
-	"github.com/b-sea/go-logger/logger"
+	"github.com/rs/zerolog"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 	return func(ctx context.Context, next graphql.Resolver) (any, error) {
 		start := time.Now()
-		log := logger.FromContext(ctx)
+		log := zerolog.Ctx(ctx)
 		result, err := next(ctx)
 
 		field := graphql.GetFieldContext(ctx)

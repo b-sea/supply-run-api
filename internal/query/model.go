@@ -27,10 +27,12 @@ type RecipeFilter struct {
 	Name        *string
 	Ingredients []string
 	CreatedBy   *entity.ID
+	IsFavorite  *bool
 }
 
 // Ingredient is a query representation of a domain Ingredient.
 type Ingredient struct {
+	Name string
 }
 
 // User is a query representation of a domain User.
