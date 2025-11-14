@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/b-sea/supply-run-api/internal/metrics"
+	"github.com/b-sea/supply-run-api/internal/mock"
+	"github.com/b-sea/supply-run-api/internal/query"
 	"github.com/b-sea/supply-run-api/internal/server"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +30,9 @@ func TestServerStartStop(t *testing.T) {
 	assert.NoError(t, listener.Close())
 
 	testServer := server.New(
+		query.NewService(
+			&mock.QueryRepository{},
+		),
 		zerolog.Nop(),
 		metrics.NewNoOp(),
 		server.WithPort(port),
@@ -47,6 +52,9 @@ func TestServerStartStop(t *testing.T) {
 func TestServerMetrics(t *testing.T) {
 	testServer := httptest.NewServer(
 		server.New(
+			query.NewService(
+				&mock.QueryRepository{},
+			),
 			zerolog.Nop(),
 			metrics.NewNoOp(),
 		),
@@ -79,6 +87,9 @@ func TestServerMetrics(t *testing.T) {
 func TestServerAPIGraphql(t *testing.T) {
 	testServer := httptest.NewServer(
 		server.New(
+			query.NewService(
+				&mock.QueryRepository{},
+			),
 			zerolog.Nop(),
 			metrics.NewNoOp(),
 		),

@@ -26,15 +26,13 @@ func (r *NoOp) Handler() http.Handler {
 }
 
 // ObserveRequestDuration records the duration of an HTTP request.
-func (r *NoOp) ObserveRequestDuration(string, string, int, time.Duration) {
-}
+func (r *NoOp) ObserveRequestDuration(string, string, int, time.Duration) {}
 
 // ObserveResponseSize records how large an HTTP response is.
 func (r *NoOp) ObserveResponseSize(string, string, int, int64) {}
 
 // ObserveResolverDuration records the duration of a GraphQL resolver.
-func (r *NoOp) ObserveResolverDuration(string, string, string, time.Duration) {
-}
+func (r *NoOp) ObserveResolverDuration(string, string, string, time.Duration) {}
 
-// ObserveResolverError records a GraphQL resolver error.
-func (r *NoOp) ObserveResolverError(string, string, string) {}
+// ObserveGraphqlError records an unhandled GraphQL error.
+func (r *NoOp) ObserveGraphqlError() {}

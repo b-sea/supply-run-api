@@ -9,6 +9,8 @@ import (
 
 	"github.com/b-sea/go-config/config"
 	"github.com/b-sea/supply-run-api/internal/metrics"
+	"github.com/b-sea/supply-run-api/internal/mock"
+	"github.com/b-sea/supply-run-api/internal/query"
 	"github.com/b-sea/supply-run-api/internal/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
@@ -35,6 +37,7 @@ func main() {
 	log := setupLogger(cfg)
 
 	svr := server.New(
+		query.NewService(&mock.QueryRepository{}),
 		log,
 		metrics.NewNoOp(),
 		server.WithPort(cfg.Server.Port),
@@ -98,14 +101,7 @@ type Config struct {
 	} `config:"server"`
 
 	Logger struct {
-		Level    string `config:"level"`
-		Rotation struct {
-			FilePath   string `config:"filePath"`
-			MaxSize    int    `config:"maxSize"`
-			MaxBackups int    `config:"maxBackups"`
-			MaxAge     int    `config:"maxAge"`
-			Compress   bool   `config:"compress"`
-		} `config:"rotation"`
+		Level string `config:"level"`
 	} `config:"logger"`
 }
 
@@ -121,29 +117,9 @@ func defaultConfig() Config {
 			WriteTimeout: 5,
 		},
 		Logger: struct {
-			Level    string `config:"level"`
-			Rotation struct {
-				FilePath   string `config:"filePath"`
-				MaxSize    int    `config:"maxSize"`
-				MaxBackups int    `config:"maxBackups"`
-				MaxAge     int    `config:"maxAge"`
-				Compress   bool   `config:"compress"`
-			} `config:"rotation"`
+			Level string `config:"level"`
 		}{
 			Level: "debug",
-			Rotation: struct {
-				FilePath   string `config:"filePath"`
-				MaxSize    int    `config:"maxSize"`
-				MaxBackups int    `config:"maxBackups"`
-				MaxAge     int    `config:"maxAge"`
-				Compress   bool   `config:"compress"`
-			}{
-				FilePath:   "./log/supply-run-api.log",
-				MaxSize:    10,
-				MaxBackups: 5,
-				MaxAge:     14,
-				Compress:   true,
-			},
 		},
 	}
 }
