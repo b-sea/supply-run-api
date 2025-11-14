@@ -9,10 +9,10 @@ import (
 	"slices"
 	"time"
 
-	"github.com/b-sea/go-logger/logger"
 	"github.com/b-sea/supply-run-api/internal/graphql"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -24,10 +24,11 @@ const (
 type Server struct {
 	http      *http.Server
 	validator *validator.Validate
+	log       zerolog.Logger
 }
 
 // New creates a new Server.
-func New(recorder Recorder, options ...Option) *Server {
+func New(log zerolog.Logger, recorder Recorder, options ...Option) *Server {
 	server := &Server{
 		http: &http.Server{
 			Addr:              fmt.Sprintf(":%d", defaultPort),
@@ -36,6 +37,7 @@ func New(recorder Recorder, options ...Option) *Server {
 			WriteTimeout:      defaultTimeout,
 		},
 		validator: validator.New(),
+		log:       log,
 	}
 
 	for _, option := range options {
@@ -43,7 +45,7 @@ func New(recorder Recorder, options ...Option) *Server {
 	}
 
 	router := mux.NewRouter()
-	router.Use(telemetryMiddleware(recorder))
+	router.Use(telemetryMiddleware(log, recorder))
 
 	router.Handle(
 		"/metrics",
@@ -59,8 +61,6 @@ func New(recorder Recorder, options ...Option) *Server {
 	// Re-define the default NotFound handler so it passes through middleware correctly.
 	router.NotFoundHandler = router.NewRoute().HandlerFunc(http.NotFound).GetHandler()
 	server.http.Handler = router
-
-	log := logger.Get()
 
 	_ = router.Walk(func(route *mux.Route, _ *mux.Router, _ []*mux.Route) error {
 		if route.GetHandler() == nil {
@@ -112,8 +112,7 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 // Start the Server.
 func (s *Server) Start() error {
-	log := logger.Get()
-	log.Info().Str("addr", s.http.Addr).Msg("starting server")
+	s.log.Info().Str("addr", s.http.Addr).Msg("starting server")
 
 	if err := s.http.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err //nolint: wrapcheck
@@ -124,8 +123,7 @@ func (s *Server) Start() error {
 
 // Stop the Server.
 func (s *Server) Stop() error {
-	log := logger.Get()
-	log.Info().Str("addr", s.http.Addr).Msg("stopping server")
+	s.log.Info().Str("addr", s.http.Addr).Msg("stopping server")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()

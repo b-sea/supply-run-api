@@ -8,7 +8,7 @@ import (
 
 // Repository defines all data interactions required for querying recipes.
 type Repository interface {
-	FindRecipes(ctx context.Context, filter *RecipeFilter, page *Pagination) ([]*Recipe, error)
+	FindRecipes(ctx context.Context, filter RecipeFilter, page Pagination) ([]*Recipe, error)
 	GetRecipes(ctx context.Context, id []entity.ID) ([]*Recipe, error)
 	GetIngredients(ctx context.Context) ([]string, error)
 	GetTags(ctx context.Context) ([]string, error)

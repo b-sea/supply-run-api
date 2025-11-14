@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/b-sea/go-config/config"
-	"github.com/b-sea/go-logger/logger"
 	"github.com/b-sea/supply-run-api/internal/metrics"
 	"github.com/b-sea/supply-run-api/internal/server"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/pkgerrors"
 )
 
 const cfgEnvPrefix = "SUPPLYRUN"
@@ -31,20 +32,10 @@ func main() {
 		panic(err)
 	}
 
-	logger.Setup(
-		logger.WithLevel(cfg.Logger.Level),
-		logger.WithRotation(
-			cfg.Logger.Rotation.FilePath,
-			cfg.Logger.Rotation.MaxSize,
-			cfg.Logger.Rotation.MaxAge,
-			cfg.Logger.Rotation.MaxBackups,
-			cfg.Logger.Rotation.Compress,
-		),
-	)
-
-	log := logger.Get()
+	log := setupLogger(cfg)
 
 	svr := server.New(
+		log,
 		metrics.NewNoOp(),
 		server.WithPort(cfg.Server.Port),
 		server.WithReadTimeout(time.Duration(cfg.Server.ReadTimeout)*time.Second),
@@ -67,6 +58,30 @@ func main() {
 	}
 
 	log.Info().Msgf("server gracefully stopped")
+}
+
+func setupLogger(cfg Config) zerolog.Logger {
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack //nolint: reassign
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+
+	level, err := zerolog.ParseLevel(cfg.Logger.Level)
+	if err != nil {
+		level = zerolog.InfoLevel
+	}
+
+	log := zerolog.New(nil).Level(level).
+		Output(
+			zerolog.ConsoleWriter{
+				Out:        os.Stdout,
+				TimeFormat: time.RFC3339,
+			},
+		).
+		With().Timestamp().
+		Logger()
+
+	zerolog.DefaultContextLogger = &log
+
+	return log
 }
 
 func configFile() string {

@@ -11,6 +11,59 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestFindRecipe(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		repo   query.Repository
+		filter *query.RecipeFilter
+		page   *query.Pagination
+		result []*query.Recipe
+		err    error
+	}
+
+	tests := map[string]testCase{
+		"nil inputs": {
+			repo: &mock.QueryRepository{
+				FindRecipesResult: []*query.Recipe{
+					{ID: entity.NewID("recipe-123")},
+				},
+				FindRecipesErr: nil,
+			},
+			filter: nil,
+			page:   nil,
+			result: []*query.Recipe{
+				{ID: entity.NewID("recipe-123")},
+			},
+			err: nil,
+		},
+		"unknown error": {
+			repo: &mock.QueryRepository{
+				FindRecipesResult: nil,
+				FindRecipesErr:    errors.New("something went wrong"),
+			},
+			filter: nil,
+			page:   nil,
+			result: nil,
+			err:    errors.New("something went wrong"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			service := query.NewService(test.repo)
+			result, err := service.FindRecipes(context.Background(), test.filter, test.page)
+
+			assert.Equal(t, test.result, result)
+			if test.err == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorAs(t, err, &test.err)
+			}
+		})
+	}
+}
+
 func TestGetRecipe(t *testing.T) {
 	t.Parallel()
 
