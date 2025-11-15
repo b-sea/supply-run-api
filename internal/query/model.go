@@ -41,6 +41,47 @@ type User struct {
 	Username string
 }
 
+// Direction is a sort direction.
+type Direction int
+
+// AscendingDirection, et al. are the different sort directions.
+const (
+	AscendingDirection Direction = iota
+	DescendingDirection
+)
+
+// Sort is the attribute to sort on.
+type Sort int
+
+// NameSort, et al. are the various attributes available for sorting.
+const (
+	NoSort Sort = iota
+	NameSort
+	CreatedSort
+	UpdatedSort
+)
+
+func (s Sort) String() string {
+	switch s {
+	case NameSort:
+		return "name"
+	case CreatedSort:
+		return "created"
+	case UpdatedSort:
+		return "updated"
+	case NoSort:
+		fallthrough
+	default:
+		return ""
+	}
+}
+
+// Order defines ordering information.
+type Order struct {
+	Sort      Sort
+	Direction Direction
+}
+
 // Cursor points to a specific item on a paged result.
 type Cursor struct {
 	ID  entity.ID

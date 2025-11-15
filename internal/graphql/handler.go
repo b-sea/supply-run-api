@@ -9,10 +9,19 @@ import (
 	"github.com/b-sea/supply-run-api/internal/query"
 )
 
-// NewHandler configures and creates a GraphQL API handler.
-func NewHandler(queries *query.Service, recorder Recorder) http.Handler {
+// GraphQL is an GraphQL API handler
+type GraphQL struct {
+	http.Handler
+}
+
+// New creates a new GraphQL API handler.
+func New(queries *query.Service, recorder Recorder) *GraphQL {
+	graphql := &GraphQL{}
+
 	schema := resolver.NewExecutableSchema(
-		resolver.Config{Resolvers: resolver.NewResolver(queries)},
+		resolver.Config{
+			Resolvers: resolver.NewResolver(queries),
+		},
 	)
 
 	server := handler.NewDefaultServer(schema)
@@ -20,5 +29,7 @@ func NewHandler(queries *query.Service, recorder Recorder) http.Handler {
 	server.AroundOperations(operationTelemetry())
 	server.SetRecoverFunc(recoverTelemetry(recorder))
 
-	return server
+	graphql.Handler = server
+
+	return graphql
 }

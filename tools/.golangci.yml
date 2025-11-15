@@ -19,9 +19,10 @@ linters:
           - err113
 
       # Exclude some linters from running on gqlgen generated files.
-      - path: internal/graphql/
+      - path: internal/graphql/resolver
         linters:
           - ireturn
+          - wrapcheck
 
   disable:
    - wsl

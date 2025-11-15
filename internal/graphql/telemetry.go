@@ -58,7 +58,7 @@ func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 
 			duration := time.Since(start)
 
-			event.Str("status", status).Dur("duration_ms", duration).Msg("resolver finished")
+			event.Str("status", status).Dur("duration_ms", duration).Msg("resolver complete")
 			recorder.ObserveResolverDuration(field.Object, field.Field.Name, status, duration)
 		}()
 

@@ -7,13 +7,10 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/b-sea/supply-run-api/internal/metrics"
-	"github.com/b-sea/supply-run-api/internal/mock"
-	"github.com/b-sea/supply-run-api/internal/query"
 	"github.com/b-sea/supply-run-api/internal/server"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
@@ -29,14 +26,7 @@ func TestServerStartStop(t *testing.T) {
 	port := listener.Addr().(*net.TCPAddr).Port
 	assert.NoError(t, listener.Close())
 
-	testServer := server.New(
-		query.NewService(
-			&mock.QueryRepository{},
-		),
-		zerolog.Nop(),
-		metrics.NewNoOp(),
-		server.WithPort(port),
-	)
+	testServer := server.New(zerolog.Nop(), metrics.NewNoOp(), server.WithPort(port))
 
 	timer := time.NewTimer(500 * time.Millisecond)
 
@@ -50,15 +40,7 @@ func TestServerStartStop(t *testing.T) {
 }
 
 func TestServerMetrics(t *testing.T) {
-	testServer := httptest.NewServer(
-		server.New(
-			query.NewService(
-				&mock.QueryRepository{},
-			),
-			zerolog.Nop(),
-			metrics.NewNoOp(),
-		),
-	)
+	testServer := httptest.NewServer(server.New(zerolog.Nop(), metrics.NewNoOp()))
 
 	request, _ := http.NewRequestWithContext(
 		context.Background(),
@@ -84,26 +66,17 @@ func TestServerMetrics(t *testing.T) {
 	testServer.Close()
 }
 
-func TestServerAPIGraphql(t *testing.T) {
-	testServer := httptest.NewServer(
-		server.New(
-			query.NewService(
-				&mock.QueryRepository{},
-			),
-			zerolog.Nop(),
-			metrics.NewNoOp(),
-		),
-	)
+func TestServerPing(t *testing.T) {
+	testServer := httptest.NewServer(server.New(zerolog.Nop(), metrics.NewNoOp()))
 
 	request, _ := http.NewRequestWithContext(
 		context.Background(),
-		http.MethodPost,
-		fmt.Sprintf("%s/graphql", testServer.URL),
-		strings.NewReader(`{}`),
+		http.MethodGet,
+		fmt.Sprintf("%s/ping", testServer.URL),
+		nil,
 	)
 
 	request.Close = true
-	request.Header.Set("Content-Type", "application/json")
 
 	response, err := http.DefaultClient.Do(request)
 	assert.NoError(t, err)
@@ -113,13 +86,9 @@ func TestServerAPIGraphql(t *testing.T) {
 
 	assert.NoError(t, response.Body.Close())
 
-	assert.Equal(t, http.StatusUnprocessableEntity, response.StatusCode)
-	assert.Equal(t, "application/json", response.Header.Get("Content-Type"))
-	assert.Equal(
-		t,
-		`{"errors":[{"message":"no operation provided","extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}],"data":null}`,
-		string(body),
-	)
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+	assert.Equal(t, `text/plain; charset=utf-8`, response.Header.Get("Content-Type"))
+	assert.Equal(t, `pong`, string(body))
 
 	testServer.Close()
 }

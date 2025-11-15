@@ -6,11 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"time"
 
-	"github.com/b-sea/supply-run-api/internal/graphql"
-	"github.com/b-sea/supply-run-api/internal/query"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
@@ -23,14 +20,16 @@ const (
 
 // Server is a supply-run API web server.
 type Server struct {
+	router    *mux.Router
 	http      *http.Server
 	validator *validator.Validate
 	log       zerolog.Logger
 }
 
 // New creates a new Server.
-func New(queries *query.Service, log zerolog.Logger, recorder Recorder, options ...Option) *Server {
+func New(log zerolog.Logger, recorder Recorder, options ...Option) *Server {
 	server := &Server{
+		router: mux.NewRouter(),
 		http: &http.Server{
 			Addr:              fmt.Sprintf(":%d", defaultPort),
 			ReadTimeout:       defaultTimeout,
@@ -41,53 +40,37 @@ func New(queries *query.Service, log zerolog.Logger, recorder Recorder, options 
 		log:       log,
 	}
 
+	server.router.Use(telemetryMiddleware(log, recorder))
+
+	options = append(
+		options,
+		AddHandler(
+			"/ping",
+			http.HandlerFunc(
+				func(writer http.ResponseWriter, _ *http.Request) {
+					_, _ = writer.Write([]byte(`pong`))
+				},
+			),
+			http.MethodGet,
+		),
+		AddHandler(
+			"/metrics",
+			func() http.HandlerFunc {
+				return func(writer http.ResponseWriter, request *http.Request) {
+					recorder.Handler().ServeHTTP(writer, request)
+				}
+			}(),
+			http.MethodGet,
+		),
+	)
+
 	for _, option := range options {
 		option(server)
 	}
 
-	router := mux.NewRouter()
-	router.Use(telemetryMiddleware(log, recorder))
-
-	router.Handle(
-		"/metrics",
-		func() http.HandlerFunc {
-			return func(writer http.ResponseWriter, request *http.Request) {
-				recorder.Handler().ServeHTTP(writer, request)
-			}
-		}(),
-	).Methods(http.MethodGet)
-
-	router.Handle("/graphql", graphql.NewHandler(queries, recorder)).Methods(http.MethodPost)
-
 	// Re-define the default NotFound handler so it passes through middleware correctly.
-	router.NotFoundHandler = router.NewRoute().HandlerFunc(http.NotFound).GetHandler()
-	server.http.Handler = router
-
-	_ = router.Walk(func(route *mux.Route, _ *mux.Router, _ []*mux.Route) error {
-		if route.GetHandler() == nil {
-			return nil
-		}
-
-		template, err := route.GetPathTemplate()
-		if err != nil {
-			return nil //nolint: nilerr
-		}
-
-		methods, _ := route.GetMethods()
-		if len(methods) == 0 {
-			log.Debug().Str("url", template).Msg("route registered")
-
-			return nil
-		}
-
-		slices.Sort(methods)
-
-		for i := range methods {
-			log.Debug().Str("method", methods[i]).Str("url", template).Msg("route registered")
-		}
-
-		return nil
-	})
+	server.router.NotFoundHandler = server.router.NewRoute().HandlerFunc(http.NotFound).GetHandler()
+	server.http.Handler = server.router
 
 	return server
 }
