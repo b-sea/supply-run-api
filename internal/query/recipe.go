@@ -8,7 +8,12 @@ import (
 )
 
 // FindRecipes returns a list of recipes based on search criteria.
-func (s *Service) FindRecipes(ctx context.Context, filter *RecipeFilter, page *Pagination) ([]*Recipe, error) {
+func (s *Service) FindRecipes(
+	ctx context.Context,
+	filter *RecipeFilter,
+	page *Pagination,
+	order *Order,
+) ([]*Recipe, error) {
 	if filter == nil {
 		filter = &RecipeFilter{}
 	}
@@ -17,7 +22,11 @@ func (s *Service) FindRecipes(ctx context.Context, filter *RecipeFilter, page *P
 		page = &Pagination{}
 	}
 
-	result, err := s.repo.FindRecipes(ctx, *filter, *page)
+	if order == nil {
+		order = &Order{}
+	}
+
+	result, err := s.repo.FindRecipes(ctx, *filter, *page, *order)
 	if err != nil {
 		return nil, queryError(err)
 	}

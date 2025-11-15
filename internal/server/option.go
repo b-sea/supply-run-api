@@ -2,6 +2,8 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"slices"
 	"time"
 )
 
@@ -42,5 +44,22 @@ func WithWriteTimeout(duration time.Duration) Option {
 
 		server.log.Debug().Dur("timeout_ms", duration).Msg("override server write timeout")
 		server.http.WriteTimeout = duration
+	}
+}
+
+// AddHandler adds an HTTP hander to the Server.
+func AddHandler(path string, handler http.Handler, methods ...string) Option {
+	return func(server *Server) {
+		if len(methods) == 0 {
+			server.log.Debug().Str("path", path).Msg("route registered")
+		}
+
+		slices.Sort(methods)
+
+		for i := range methods {
+			server.log.Debug().Str("method", methods[i]).Str("path", path).Msg("route registered")
+		}
+
+		server.router.Handle(path, handler).Methods(methods...)
 	}
 }

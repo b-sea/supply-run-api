@@ -18,6 +18,7 @@ func TestFindRecipe(t *testing.T) {
 		repo   query.Repository
 		filter *query.RecipeFilter
 		page   *query.Pagination
+		order  *query.Order
 		result []*query.Recipe
 		err    error
 	}
@@ -32,6 +33,7 @@ func TestFindRecipe(t *testing.T) {
 			},
 			filter: nil,
 			page:   nil,
+			order:  nil,
 			result: []*query.Recipe{
 				{ID: entity.NewID("recipe-123")},
 			},
@@ -44,6 +46,7 @@ func TestFindRecipe(t *testing.T) {
 			},
 			filter: nil,
 			page:   nil,
+			order:  nil,
 			result: nil,
 			err:    errors.New("something went wrong"),
 		},
@@ -52,7 +55,7 @@ func TestFindRecipe(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			service := query.NewService(test.repo)
-			result, err := service.FindRecipes(context.Background(), test.filter, test.page)
+			result, err := service.FindRecipes(context.Background(), test.filter, test.page, test.order)
 
 			assert.Equal(t, test.result, result)
 			if test.err == nil {

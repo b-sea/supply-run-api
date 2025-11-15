@@ -26,6 +26,7 @@ func (m *QueryRepository) FindRecipes(
 	ctx context.Context,
 	filter query.RecipeFilter,
 	page query.Pagination,
+	order query.Order,
 ) ([]*query.Recipe, error) {
 	return m.FindRecipesResult, m.FindRecipesErr
 }

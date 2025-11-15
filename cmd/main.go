@@ -2,12 +2,14 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/b-sea/go-config/config"
+	"github.com/b-sea/supply-run-api/internal/graphql"
 	"github.com/b-sea/supply-run-api/internal/metrics"
 	"github.com/b-sea/supply-run-api/internal/mock"
 	"github.com/b-sea/supply-run-api/internal/query"
@@ -35,14 +37,13 @@ func main() {
 	}
 
 	log := setupLogger(cfg)
+	recorder := metrics.NewNoOp()
 
-	svr := server.New(
-		query.NewService(&mock.QueryRepository{}),
-		log,
-		metrics.NewNoOp(),
+	svr := server.New(log, recorder,
 		server.WithPort(cfg.Server.Port),
 		server.WithReadTimeout(time.Duration(cfg.Server.ReadTimeout)*time.Second),
 		server.WithWriteTimeout(time.Duration(cfg.Server.WriteTimeout)*time.Second),
+		server.AddHandler("/graphql", graphql.New(query.NewService(&mock.QueryRepository{}), recorder), http.MethodPost),
 	)
 
 	channel := make(chan os.Signal, 1)
