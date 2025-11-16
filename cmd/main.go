@@ -95,29 +95,29 @@ func configFile() string {
 
 type Config struct {
 	Server struct {
-		Port         int `koanf:"port"`
-		ReadTimeout  int `koanf:"readTimeout"`
-		WriteTimeout int `koanf:"writeTimeout"`
-	} `koanf:"server"`
+		Port         int `config:"port"`
+		ReadTimeout  int `config:"readTimeout"`
+		WriteTimeout int `config:"writeTimeout"`
+	} `config:"server"`
 
 	Logger struct {
-		Level string `koanf:"level"`
-	} `koanf:"logger"`
+		Level string `config:"level"`
+	} `config:"logger"`
 }
 
 func defaultConfig() Config {
 	return Config{
 		Server: struct {
-			Port         int `koanf:"port"`
-			ReadTimeout  int `koanf:"readTimeout"`
-			WriteTimeout int `koanf:"writeTimeout"`
+			Port         int `config:"port"`
+			ReadTimeout  int `config:"readTimeout"`
+			WriteTimeout int `config:"writeTimeout"`
 		}{
 			Port:         5000,
 			ReadTimeout:  5,
 			WriteTimeout: 5,
 		},
 		Logger: struct {
-			Level string `koanf:"level"`
+			Level string `config:"level"`
 		}{
 			Level: "debug",
 		},
