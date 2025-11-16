@@ -76,16 +76,12 @@ func setupLogger(cfg Config) zerolog.Logger {
 		level = zerolog.InfoLevel
 	}
 
-	log := zerolog.New(nil).Level(level).
-		Output(
-			zerolog.ConsoleWriter{
-				Out:        os.Stdout,
-				TimeFormat: time.RFC3339,
-			},
-		).
-		With().Timestamp().
-		Logger()
+	writer := zerolog.ConsoleWriter{
+		Out:        os.Stdout,
+		TimeFormat: time.RFC3339,
+	}
 
+	log := zerolog.New(writer).Level(level).With().Timestamp().Logger()
 	zerolog.DefaultContextLogger = &log
 
 	return log
