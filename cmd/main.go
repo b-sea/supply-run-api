@@ -76,16 +76,12 @@ func setupLogger(cfg Config) zerolog.Logger {
 		level = zerolog.InfoLevel
 	}
 
-	log := zerolog.New(nil).Level(level).
-		Output(
-			zerolog.ConsoleWriter{
-				Out:        os.Stdout,
-				TimeFormat: time.RFC3339,
-			},
-		).
-		With().Timestamp().
-		Logger()
+	writer := zerolog.ConsoleWriter{
+		Out:        os.Stdout,
+		TimeFormat: time.RFC3339,
+	}
 
+	log := zerolog.New(writer).Level(level).With().Timestamp().Logger()
 	zerolog.DefaultContextLogger = &log
 
 	return log
@@ -99,29 +95,29 @@ func configFile() string {
 
 type Config struct {
 	Server struct {
-		Port         int `config:"port"`
-		ReadTimeout  int `config:"readTimeout"`
-		WriteTimeout int `config:"writeTimeout"`
-	} `config:"server"`
+		Port         int `koanf:"port"`
+		ReadTimeout  int `koanf:"readTimeout"`
+		WriteTimeout int `koanf:"writeTimeout"`
+	} `koanf:"server"`
 
 	Logger struct {
-		Level string `config:"level"`
-	} `config:"logger"`
+		Level string `koanf:"level"`
+	} `koanf:"logger"`
 }
 
 func defaultConfig() Config {
 	return Config{
 		Server: struct {
-			Port         int `config:"port"`
-			ReadTimeout  int `config:"readTimeout"`
-			WriteTimeout int `config:"writeTimeout"`
+			Port         int `koanf:"port"`
+			ReadTimeout  int `koanf:"readTimeout"`
+			WriteTimeout int `koanf:"writeTimeout"`
 		}{
 			Port:         5000,
 			ReadTimeout:  5,
 			WriteTimeout: 5,
 		},
 		Logger: struct {
-			Level string `config:"level"`
+			Level string `koanf:"level"`
 		}{
 			Level: "debug",
 		},
