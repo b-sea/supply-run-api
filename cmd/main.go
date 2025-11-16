@@ -9,16 +9,18 @@ import (
 	"time"
 
 	"github.com/b-sea/go-config/config"
+	"github.com/b-sea/go-server/server"
 	"github.com/b-sea/supply-run-api/internal/graphql"
 	"github.com/b-sea/supply-run-api/internal/metrics"
 	"github.com/b-sea/supply-run-api/internal/mock"
 	"github.com/b-sea/supply-run-api/internal/query"
-	"github.com/b-sea/supply-run-api/internal/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
 )
 
 const cfgEnvPrefix = "SUPPLYRUN"
+
+var version string
 
 func main() {
 	options := []config.Option{
@@ -40,9 +42,10 @@ func main() {
 	recorder := metrics.NewNoOp()
 
 	svr := server.New(log, recorder,
-		server.WithPort(cfg.Server.Port),
-		server.WithReadTimeout(time.Duration(cfg.Server.ReadTimeout)*time.Second),
-		server.WithWriteTimeout(time.Duration(cfg.Server.WriteTimeout)*time.Second),
+		server.SetPort(cfg.Server.Port),
+		server.SetReadTimeout(time.Duration(cfg.Server.ReadTimeout)*time.Second),
+		server.SetWriteTimeout(time.Duration(cfg.Server.WriteTimeout)*time.Second),
+		server.SetVersion(version),
 		server.AddHandler("/graphql", graphql.New(query.NewService(&mock.QueryRepository{}), recorder), http.MethodPost),
 	)
 

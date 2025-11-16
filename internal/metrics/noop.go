@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/b-sea/supply-run-api/internal/server"
+	"github.com/b-sea/go-server/server"
 )
 
 var (
@@ -24,6 +24,9 @@ func NewNoOp() *NoOp {
 func (r *NoOp) Handler() http.Handler {
 	return http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
 }
+
+// ObserveHealth records the health of a named service.
+func (r *NoOp) ObserveHealth(string, bool) {}
 
 // ObserveRequestDuration records the duration of an HTTP request.
 func (r *NoOp) ObserveRequestDuration(string, string, int, time.Duration) {}

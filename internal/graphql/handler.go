@@ -9,7 +9,7 @@ import (
 	"github.com/b-sea/supply-run-api/internal/query"
 )
 
-// GraphQL is an GraphQL API handler
+// GraphQL is an GraphQL API handler.
 type GraphQL struct {
 	http.Handler
 }
