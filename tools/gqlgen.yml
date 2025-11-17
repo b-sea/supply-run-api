@@ -1,10 +1,10 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
 schema:
-  - internal/server/graphql/schema/**/*.graphqls
+  - internal/graphql/schema/**/*.graphqls
 
 # Where should the generated server code go?
 exec:
-  filename: internal/server/graphql/resolver/generated.go
+  filename: internal/graphql/resolver/generated.go
   package: resolver
 
 # Uncomment to enable federation
@@ -14,13 +14,13 @@ exec:
 
 # Where should any generated models go?
 model:
-  filename: internal/server/graphql/model/models_gen.go
+  filename: internal/graphql/model/models_gen.go
   package: model
 
 # Where should the resolver implementations go?
 resolver:
   layout: follow-schema
-  dir: internal/server/graphql/resolver
+  dir: internal/graphql/resolver
   package: resolver
   filename_template: "{name}.go"
 
@@ -30,6 +30,12 @@ resolver:
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
 models:
+  ID:
+    model:
+      - github.com/b-sea/supply-run-api/internal/graphql/model.ID
+  Cursor:
+    model:
+      - github.com/b-sea/supply-run-api/internal/graphql/model.Cursor
   Int:
     model:
       - github.com/99designs/gqlgen/graphql.Int

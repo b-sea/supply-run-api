@@ -1,15 +1,46 @@
 directive @goField(
-    forceResolver: Boolean
-    name: String
-    omittable: Boolean
+  forceResolver: Boolean
+  name: String
+  omittable: Boolean
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+directive @goExtraField(
+	name: String
+	type: String!
+	overrideTags: String
+	description: String
+) repeatable on OBJECT | INPUT_OBJECT
 
 scalar Time
+scalar Cursor
 
-extend type Query {
-  temp: String!
+interface Node {
+  id: ID!
 }
 
-extend type Mutation {
-  temp: String!
+input Page {
+  first: Int
+  after: Cursor
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: Cursor
+  endCursor: Cursor
+}
+
+enum Sort {
+  CREATED
+  UPDATED
+  NAME
+}
+
+enum Direction {
+  DESC
+  ASC
+}
+
+input Order {
+  Sort: Sort
+  Direction: Direction
 }

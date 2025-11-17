@@ -22,6 +22,11 @@ type Recipe struct {
 	UpdatedBy   entity.ID
 }
 
+// Ingredient is a query representation of a domain Ingredient.
+type Ingredient struct {
+	Name string
+}
+
 // RecipeFilter defines all options available for finding recipes.
 type RecipeFilter struct {
 	Name        *string
@@ -30,9 +35,10 @@ type RecipeFilter struct {
 	IsFavorite  *bool
 }
 
-// Ingredient is a query representation of a domain Ingredient.
-type Ingredient struct {
-	Name string
+// RecipePage contains information about a page of recipes.
+type RecipePage struct {
+	Info  PageInfo
+	Items []*Recipe
 }
 
 // User is a query representation of a domain User.
@@ -44,10 +50,10 @@ type User struct {
 // Direction is a sort direction.
 type Direction int
 
-// AscendingDirection, et al. are the different sort directions.
+// AscDirection, et al. are the different sort directions.
 const (
-	AscendingDirection Direction = iota
-	DescendingDirection
+	DescDirection Direction = iota
+	AscDirection
 )
 
 // Sort is the attribute to sort on.
@@ -55,26 +61,10 @@ type Sort int
 
 // NameSort, et al. are the various attributes available for sorting.
 const (
-	NoSort Sort = iota
-	NameSort
-	CreatedSort
+	CreatedSort Sort = iota
 	UpdatedSort
+	NameSort
 )
-
-func (s Sort) String() string {
-	switch s {
-	case NameSort:
-		return "name"
-	case CreatedSort:
-		return "created"
-	case UpdatedSort:
-		return "updated"
-	case NoSort:
-		fallthrough
-	default:
-		return ""
-	}
-}
 
 // Order defines ordering information.
 type Order struct {
@@ -84,14 +74,20 @@ type Order struct {
 
 // Cursor points to a specific item on a paged result.
 type Cursor struct {
-	ID  entity.ID
-	Key any
+	ID   entity.ID
+	Sort Sort
 }
 
 // Pagination defines pagination controls for queries.
 type Pagination struct {
-	First  int
-	After  Cursor
-	Last   int
-	Before Cursor
+	Cursor *Cursor
+	Size   int
+}
+
+// PageInfo defines the boundries of a page.
+type PageInfo struct {
+	HasNextPage     bool
+	HasPreviousPage bool
+	StartCursor     *Cursor
+	EndCursor       *Cursor
 }

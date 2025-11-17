@@ -1,0 +1,44 @@
+type Recipe implements Node {
+  id: ID!
+  name: String!
+  url: String!
+  numServings: Int!
+  steps: [String!]!
+  ingredients: [Ingredient!]!
+  tags: [String!]!
+  isFavorite: Boolean!
+  createdAt: Time!
+  createdBy: ID!
+  updatedAt: Time!
+  updatedBy: ID!
+}
+
+type Ingredient {
+  name: String!
+}
+
+union RecipeResult = Recipe | NotFoundError
+
+input RecipeFilter {
+  name: String
+  ingredients: [String!]
+  createdBy: ID
+  isFavorite: Boolean
+}
+
+type RecipeConnection {
+  pageInfo: PageInfo!
+  edges: [RecipeEdge!]
+}
+
+type RecipeEdge {
+  cursor: Cursor!
+  node: Recipe!
+}
+
+extend type Query {
+  findRecipes(filter: RecipeFilter, page: Page, order: Order): RecipeConnection!
+  recipe(id: ID!): RecipeResult!
+  ingredients: [String!]!
+  tags: [String!]!
+}
