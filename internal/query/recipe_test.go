@@ -16,26 +16,151 @@ func TestFindRecipe(t *testing.T) {
 
 	type testCase struct {
 		repo   query.Repository
-		filter *query.RecipeFilter
-		page   *query.Pagination
-		order  *query.Order
-		result []*query.Recipe
+		filter query.RecipeFilter
+		page   query.Pagination
+		order  query.Order
+		result *query.RecipePage
 		err    error
 	}
 
 	tests := map[string]testCase{
-		"nil inputs": {
+		"first page": {
 			repo: &mock.QueryRepository{
 				FindRecipesResult: []*query.Recipe{
-					{ID: entity.NewID("recipe-123")},
+					{ID: entity.NewID("1")},
+					{ID: entity.NewID("2")},
+					{ID: entity.NewID("3")},
+					{ID: entity.NewID("4")},
+					{ID: entity.NewID("5")},
 				},
 				FindRecipesErr: nil,
 			},
-			filter: nil,
-			page:   nil,
-			order:  nil,
-			result: []*query.Recipe{
-				{ID: entity.NewID("recipe-123")},
+			filter: query.RecipeFilter{},
+			page: query.Pagination{
+				Size: 3,
+			},
+			order: query.Order{},
+			result: &query.RecipePage{
+				Info: query.PageInfo{
+					HasNextPage:     true,
+					HasPreviousPage: false,
+					StartCursor: &query.Cursor{
+						ID:   entity.NewID("1"),
+						Sort: query.CreatedSort,
+					},
+					EndCursor: &query.Cursor{
+						ID:   entity.NewID("3"),
+						Sort: query.CreatedSort,
+					},
+				},
+				Items: []*query.Recipe{
+					{ID: entity.NewID("1")},
+					{ID: entity.NewID("2")},
+					{ID: entity.NewID("3")},
+				},
+			},
+			err: nil,
+		},
+		"middle page": {
+			repo: &mock.QueryRepository{
+				FindRecipesResult: []*query.Recipe{
+					{ID: entity.NewID("2")},
+					{ID: entity.NewID("3")},
+					{ID: entity.NewID("4")},
+					{ID: entity.NewID("5")},
+					{ID: entity.NewID("6")},
+				},
+				FindRecipesErr: nil,
+			},
+			filter: query.RecipeFilter{},
+			page: query.Pagination{
+				Cursor: &query.Cursor{ID: entity.NewID("2")},
+				Size:   3,
+			},
+			order: query.Order{},
+			result: &query.RecipePage{
+				Info: query.PageInfo{
+					HasNextPage:     true,
+					HasPreviousPage: true,
+					StartCursor: &query.Cursor{
+						ID:   entity.NewID("3"),
+						Sort: query.CreatedSort,
+					},
+					EndCursor: &query.Cursor{
+						ID:   entity.NewID("5"),
+						Sort: query.CreatedSort,
+					},
+				},
+				Items: []*query.Recipe{
+					{ID: entity.NewID("3")},
+					{ID: entity.NewID("4")},
+					{ID: entity.NewID("5")},
+				},
+			},
+			err: nil,
+		},
+		"last page": {
+			repo: &mock.QueryRepository{
+				FindRecipesResult: []*query.Recipe{
+					{ID: entity.NewID("5")},
+					{ID: entity.NewID("6")},
+					{ID: entity.NewID("7")},
+				},
+				FindRecipesErr: nil,
+			},
+			filter: query.RecipeFilter{},
+			page: query.Pagination{
+				Cursor: &query.Cursor{ID: entity.NewID("5")},
+				Size:   3,
+			},
+			order: query.Order{},
+			result: &query.RecipePage{
+				Info: query.PageInfo{
+					HasNextPage:     false,
+					HasPreviousPage: true,
+					StartCursor: &query.Cursor{
+						ID:   entity.NewID("6"),
+						Sort: query.CreatedSort,
+					},
+					EndCursor: &query.Cursor{
+						ID:   entity.NewID("7"),
+						Sort: query.CreatedSort,
+					},
+				},
+				Items: []*query.Recipe{
+					{ID: entity.NewID("6")},
+					{ID: entity.NewID("7")},
+				},
+			},
+			err: nil,
+		},
+		"no page size": {
+			repo: &mock.QueryRepository{
+				FindRecipesResult: []*query.Recipe{},
+				FindRecipesErr:    nil,
+			},
+			filter: query.RecipeFilter{},
+			page:   query.Pagination{},
+			order:  query.Order{},
+			result: &query.RecipePage{
+				Info:  query.PageInfo{},
+				Items: []*query.Recipe{},
+			},
+			err: nil,
+		},
+		"no find results": {
+			repo: &mock.QueryRepository{
+				FindRecipesResult: []*query.Recipe{},
+				FindRecipesErr:    nil,
+			},
+			filter: query.RecipeFilter{},
+			page: query.Pagination{
+				Size: 3,
+			},
+			order: query.Order{},
+			result: &query.RecipePage{
+				Info:  query.PageInfo{},
+				Items: []*query.Recipe{},
 			},
 			err: nil,
 		},
@@ -44,9 +169,11 @@ func TestFindRecipe(t *testing.T) {
 				FindRecipesResult: nil,
 				FindRecipesErr:    errors.New("something went wrong"),
 			},
-			filter: nil,
-			page:   nil,
-			order:  nil,
+			filter: query.RecipeFilter{},
+			page: query.Pagination{
+				Size: 3,
+			},
+			order:  query.Order{},
 			result: nil,
 			err:    errors.New("something went wrong"),
 		},

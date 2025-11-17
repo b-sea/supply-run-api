@@ -2,8 +2,211 @@
 
 package model
 
-type Mutation struct {
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
+	"time"
+)
+
+type Node interface {
+	IsNode()
+	GetID() ID
+}
+
+type RecipeResult interface {
+	IsRecipeResult()
+}
+
+type UserResult interface {
+	IsUserResult()
+}
+
+type Ingredient struct {
+	Name string `json:"name"`
+}
+
+type NotFoundError struct {
+	ID ID `json:"id"`
+}
+
+func (NotFoundError) IsRecipeResult() {}
+
+func (NotFoundError) IsUserResult() {}
+
+type Order struct {
+	Sort      *Sort      `json:"Sort,omitempty"`
+	Direction *Direction `json:"Direction,omitempty"`
+}
+
+type Page struct {
+	First *int    `json:"first,omitempty"`
+	After *Cursor `json:"after,omitempty"`
+}
+
+type PageInfo struct {
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *Cursor `json:"startCursor,omitempty"`
+	EndCursor       *Cursor `json:"endCursor,omitempty"`
 }
 
 type Query struct {
+}
+
+type Recipe struct {
+	ID          ID            `json:"id"`
+	Name        string        `json:"name"`
+	URL         string        `json:"url"`
+	NumServings int           `json:"numServings"`
+	Steps       []string      `json:"steps"`
+	Ingredients []*Ingredient `json:"ingredients"`
+	Tags        []string      `json:"tags"`
+	IsFavorite  bool          `json:"isFavorite"`
+	CreatedAt   time.Time     `json:"createdAt"`
+	CreatedBy   ID            `json:"createdBy"`
+	UpdatedAt   time.Time     `json:"updatedAt"`
+	UpdatedBy   ID            `json:"updatedBy"`
+}
+
+func (Recipe) IsNode()        {}
+func (this Recipe) GetID() ID { return this.ID }
+
+func (Recipe) IsRecipeResult() {}
+
+type RecipeConnection struct {
+	PageInfo *PageInfo     `json:"pageInfo"`
+	Edges    []*RecipeEdge `json:"edges,omitempty"`
+}
+
+type RecipeEdge struct {
+	Cursor Cursor  `json:"cursor"`
+	Node   *Recipe `json:"node"`
+}
+
+type RecipeFilter struct {
+	Name        *string  `json:"name,omitempty"`
+	Ingredients []string `json:"ingredients,omitempty"`
+	CreatedBy   *ID      `json:"createdBy,omitempty"`
+	IsFavorite  *bool    `json:"isFavorite,omitempty"`
+}
+
+type User struct {
+	ID       ID     `json:"id"`
+	Username string `json:"username"`
+}
+
+func (User) IsUserResult() {}
+
+type Direction string
+
+const (
+	DirectionDesc Direction = "DESC"
+	DirectionAsc  Direction = "ASC"
+)
+
+var AllDirection = []Direction{
+	DirectionDesc,
+	DirectionAsc,
+}
+
+func (e Direction) IsValid() bool {
+	switch e {
+	case DirectionDesc, DirectionAsc:
+		return true
+	}
+	return false
+}
+
+func (e Direction) String() string {
+	return string(e)
+}
+
+func (e *Direction) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Direction(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Direction", str)
+	}
+	return nil
+}
+
+func (e Direction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *Direction) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e Direction) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type Sort string
+
+const (
+	SortCreated Sort = "CREATED"
+	SortUpdated Sort = "UPDATED"
+	SortName    Sort = "NAME"
+)
+
+var AllSort = []Sort{
+	SortCreated,
+	SortUpdated,
+	SortName,
+}
+
+func (e Sort) IsValid() bool {
+	switch e {
+	case SortCreated, SortUpdated, SortName:
+		return true
+	}
+	return false
+}
+
+func (e Sort) String() string {
+	return string(e)
+}
+
+func (e *Sort) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Sort(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Sort", str)
+	}
+	return nil
+}
+
+func (e Sort) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *Sort) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e Sort) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

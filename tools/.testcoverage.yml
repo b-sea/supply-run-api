@@ -12,7 +12,7 @@ exclude:
     - internal/mock
     - internal/graphql/handler\.go
     - internal/graphql/telemetry\.go
-    - internal/graphql/model
+    - internal/graphql/model/models_gen\.go
     - internal/graphql/resolver/generated\.go
 
 force-annotation-comment: true

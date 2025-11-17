@@ -23,6 +23,7 @@ linters:
         linters:
           - ireturn
           - wrapcheck
+          - lll
 
   disable:
    - wsl
