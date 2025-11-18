@@ -9,9 +9,9 @@ linters:
       - internal/mock
 
     rules:
-      - path: cmd/main.go
+      - path: cmd/supplyrun/cli/
         linters:
-          - mnd
+          - wrapcheck
 
       # Domain options should allow dynamic errors.
       - path: internal/recipe/option.go
