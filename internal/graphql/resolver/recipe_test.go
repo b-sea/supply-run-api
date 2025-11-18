@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/99designs/gqlgen/client"
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/b-sea/supply-run-api/internal/entity"
+	"github.com/b-sea/supply-run-api/internal/graphql"
 	"github.com/b-sea/supply-run-api/internal/graphql/model"
-	"github.com/b-sea/supply-run-api/internal/graphql/resolver"
+	"github.com/b-sea/supply-run-api/internal/metrics"
 	"github.com/b-sea/supply-run-api/internal/mock"
 	"github.com/b-sea/supply-run-api/internal/query"
 	"github.com/stretchr/testify/assert"
@@ -61,15 +60,7 @@ func TestQueryFindRecipes(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			server := handler.New(
-				resolver.NewExecutableSchema(
-					resolver.Config{
-						Resolvers: resolver.NewResolver(query.NewService(test.repo)),
-					},
-				),
-			)
-			server.AddTransport(transport.POST{})
-
+			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
 			testClient := client.New(server)
 
 			var response map[string]any
@@ -155,15 +146,7 @@ func TestQueryRecipe(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			server := handler.New(
-				resolver.NewExecutableSchema(
-					resolver.Config{
-						Resolvers: resolver.NewResolver(query.NewService(test.repo)),
-					},
-				),
-			)
-			server.AddTransport(transport.POST{})
-
+			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
 			testClient := client.New(server)
 
 			var response map[string]any
@@ -222,15 +205,7 @@ func TestQueryIngredients(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			server := handler.New(
-				resolver.NewExecutableSchema(
-					resolver.Config{
-						Resolvers: resolver.NewResolver(query.NewService(test.repo)),
-					},
-				),
-			)
-			server.AddTransport(transport.POST{})
-
+			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
 			testClient := client.New(server)
 
 			var response map[string]any
@@ -287,15 +262,127 @@ func TestQueryTags(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			server := handler.New(
-				resolver.NewExecutableSchema(
-					resolver.Config{
-						Resolvers: resolver.NewResolver(query.NewService(test.repo)),
-					},
-				),
-			)
-			server.AddTransport(transport.POST{})
+			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
+			testClient := client.New(server)
 
+			var response map[string]any
+
+			err := testClient.Post(test.query, &response, test.options...)
+
+			assert.Equal(t, test.response, response)
+			if test.err == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorAs(t, err, &test.err)
+			}
+		})
+	}
+}
+
+func TestQueryRecipeCreatedBy(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		repo     query.Repository
+		options  []client.Option
+		query    string
+		response map[string]any
+		err      error
+	}
+
+	tests := map[string]testCase{
+		"success": {
+			repo: &mock.QueryRepository{
+				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), CreatedBy: entity.NewID("U1")}},
+				GetUsersResult:   []*query.User{{ID: entity.NewID("U1")}},
+			},
+			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("R1")).String())},
+			query:   `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { createdBy { __typename ...on User { id }}}}}`,
+			response: map[string]any{
+				"recipe": map[string]any{
+					"createdBy": map[string]any{
+						"__typename": "User",
+						"id":         "dXNlcjpVMQ==",
+					},
+				},
+			},
+			err: nil,
+		},
+		"repo error": {
+			repo: &mock.QueryRepository{
+				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), CreatedBy: entity.NewID("U1")}},
+				GetUsersErr:      errors.New("some random error"),
+			},
+			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
+			query:    `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { createdBy { __typename ...on User { id }}}}}`,
+			response: nil,
+			err:      errors.New("some random error"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
+			testClient := client.New(server)
+
+			var response map[string]any
+
+			err := testClient.Post(test.query, &response, test.options...)
+
+			assert.Equal(t, test.response, response)
+			if test.err == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorAs(t, err, &test.err)
+			}
+		})
+	}
+}
+
+func TestQueryRecipeUpdatedBy(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		repo     query.Repository
+		options  []client.Option
+		query    string
+		response map[string]any
+		err      error
+	}
+
+	tests := map[string]testCase{
+		"success": {
+			repo: &mock.QueryRepository{
+				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), UpdatedBy: entity.NewID("U1")}},
+				GetUsersResult:   []*query.User{{ID: entity.NewID("U1")}},
+			},
+			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("R1")).String())},
+			query:   `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { updatedBy { __typename ...on User { id }}}}}`,
+			response: map[string]any{
+				"recipe": map[string]any{
+					"updatedBy": map[string]any{
+						"__typename": "User",
+						"id":         "dXNlcjpVMQ==",
+					},
+				},
+			},
+			err: nil,
+		},
+		"repo error": {
+			repo: &mock.QueryRepository{
+				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), UpdatedBy: entity.NewID("U1")}},
+				GetUsersErr:      errors.New("some random error"),
+			},
+			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
+			query:    `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { updatedBy { __typename ...on User { id }}}}}`,
+			response: nil,
+			err:      errors.New("some random error"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
 			testClient := client.New(server)
 
 			var response map[string]any

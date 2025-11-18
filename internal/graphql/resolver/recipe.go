@@ -9,6 +9,7 @@ import (
 	"errors"
 
 	"github.com/b-sea/supply-run-api/internal/entity"
+	"github.com/b-sea/supply-run-api/internal/graphql/dataloader"
 	"github.com/b-sea/supply-run-api/internal/graphql/model"
 )
 
@@ -65,7 +66,31 @@ func (r *queryResolver) Tags(ctx context.Context) ([]string, error) {
 	return result, nil
 }
 
+// CreatedBy is the resolver for the createdBy field.
+func (r *recipeResolver) CreatedBy(ctx context.Context, obj *model.Recipe) (model.UserResult, error) {
+	result, err := dataloader.GetUser(ctx, obj.CreatedByID)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// UpdatedBy is the resolver for the updatedBy field.
+func (r *recipeResolver) UpdatedBy(ctx context.Context, obj *model.Recipe) (model.UserResult, error) {
+	result, err := dataloader.GetUser(ctx, obj.UpdatedByID)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Recipe returns RecipeResolver implementation.
+func (r *Resolver) Recipe() RecipeResolver { return &recipeResolver{r} }
+
 type queryResolver struct{ *Resolver }
+type recipeResolver struct{ *Resolver }

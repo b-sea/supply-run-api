@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/b-sea/supply-run-api/internal/graphql/dataloader"
 	"github.com/b-sea/supply-run-api/internal/graphql/resolver"
 	"github.com/b-sea/supply-run-api/internal/query"
 )
@@ -29,7 +30,7 @@ func New(queries *query.Service, recorder Recorder) *GraphQL {
 	server.AroundOperations(operationTelemetry())
 	server.SetRecoverFunc(recoverTelemetry(recorder))
 
-	graphql.Handler = server
+	graphql.Handler = dataloader.Middleware(queries, server)
 
 	return graphql
 }

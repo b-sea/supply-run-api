@@ -40,6 +40,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Query() QueryResolver
+	Recipe() RecipeResolver
 }
 
 type DirectiveRoot struct {
@@ -104,6 +105,11 @@ type QueryResolver interface {
 	Recipe(ctx context.Context, id model.ID) (model.RecipeResult, error)
 	Ingredients(ctx context.Context) ([]string, error)
 	Tags(ctx context.Context) ([]string, error)
+}
+type RecipeResolver interface {
+	CreatedBy(ctx context.Context, obj *model.Recipe) (model.UserResult, error)
+
+	UpdatedBy(ctx context.Context, obj *model.Recipe) (model.UserResult, error)
 }
 
 type executableSchema struct {
@@ -407,7 +413,10 @@ var sources = []*ast.Source{
 	{Name: "../schema/error.graphqls", Input: `type NotFoundError {
   id: ID!
 }`, BuiltIn: false},
-	{Name: "../schema/recipe.graphqls", Input: `type Recipe implements Node {
+	{Name: "../schema/recipe.graphqls", Input: `type Recipe
+  @goExtraField(name: "CreatedByID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
+  @goExtraField(name: "UpdatedByID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
+{
   id: ID!
   name: String!
   url: String!
@@ -417,9 +426,9 @@ var sources = []*ast.Source{
   tags: [String!]!
   isFavorite: Boolean!
   createdAt: Time!
-  createdBy: ID!
+  createdBy: UserResult! @goField(forceResolver: true)
   updatedAt: Time!
-  updatedBy: ID!
+  updatedBy: UserResult! @goField(forceResolver: true)
 }
 
 type Ingredient {
@@ -465,10 +474,6 @@ directive @goExtraField(
 
 scalar Time
 scalar Cursor
-
-interface Node {
-  id: ID!
-}
 
 input Page {
   first: Int
@@ -1306,10 +1311,10 @@ func (ec *executionContext) _Recipe_createdBy(ctx context.Context, field graphql
 		field,
 		ec.fieldContext_Recipe_createdBy,
 		func(ctx context.Context) (any, error) {
-			return obj.CreatedBy, nil
+			return ec.resolvers.Recipe().CreatedBy(ctx, obj)
 		},
 		nil,
-		ec.marshalNID2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐID,
+		ec.marshalNUserResult2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐUserResult,
 		true,
 		true,
 	)
@@ -1319,10 +1324,10 @@ func (ec *executionContext) fieldContext_Recipe_createdBy(_ context.Context, fie
 	fc = &graphql.FieldContext{
 		Object:     "Recipe",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UserResult does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1364,10 +1369,10 @@ func (ec *executionContext) _Recipe_updatedBy(ctx context.Context, field graphql
 		field,
 		ec.fieldContext_Recipe_updatedBy,
 		func(ctx context.Context) (any, error) {
-			return obj.UpdatedBy, nil
+			return ec.resolvers.Recipe().UpdatedBy(ctx, obj)
 		},
 		nil,
-		ec.marshalNID2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐID,
+		ec.marshalNUserResult2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐUserResult,
 		true,
 		true,
 	)
@@ -1377,10 +1382,10 @@ func (ec *executionContext) fieldContext_Recipe_updatedBy(_ context.Context, fie
 	fc = &graphql.FieldContext{
 		Object:     "Recipe",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UserResult does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3168,22 +3173,6 @@ func (ec *executionContext) unmarshalInputRecipeFilter(ctx context.Context, obj 
 
 // region    ************************** interface.gotpl ***************************
 
-func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj model.Node) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.Recipe:
-		return ec._Recipe(ctx, sel, &obj)
-	case *model.Recipe:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Recipe(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
 func (ec *executionContext) _RecipeResult(ctx context.Context, sel ast.SelectionSet, obj model.RecipeResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -3498,7 +3487,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var recipeImplementors = []string{"Recipe", "Node", "RecipeResult"}
+var recipeImplementors = []string{"Recipe", "RecipeResult"}
 
 func (ec *executionContext) _Recipe(ctx context.Context, sel ast.SelectionSet, obj *model.Recipe) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, recipeImplementors)
@@ -3512,63 +3501,125 @@ func (ec *executionContext) _Recipe(ctx context.Context, sel ast.SelectionSet, o
 		case "id":
 			out.Values[i] = ec._Recipe_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Recipe_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "url":
 			out.Values[i] = ec._Recipe_url(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "numServings":
 			out.Values[i] = ec._Recipe_numServings(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "steps":
 			out.Values[i] = ec._Recipe_steps(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "ingredients":
 			out.Values[i] = ec._Recipe_ingredients(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "tags":
 			out.Values[i] = ec._Recipe_tags(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "isFavorite":
 			out.Values[i] = ec._Recipe_isFavorite(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Recipe_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "createdBy":
-			out.Values[i] = ec._Recipe_createdBy(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Recipe_createdBy(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "updatedAt":
 			out.Values[i] = ec._Recipe_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "updatedBy":
-			out.Values[i] = ec._Recipe_updatedBy(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Recipe_updatedBy(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4288,6 +4339,16 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNUserResult2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐUserResult(ctx context.Context, sel ast.SelectionSet, v model.UserResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

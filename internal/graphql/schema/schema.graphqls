@@ -13,10 +13,6 @@ directive @goExtraField(
 scalar Time
 scalar Cursor
 
-interface Node {
-  id: ID!
-}
-
 input Page {
   first: Int
   after: Cursor

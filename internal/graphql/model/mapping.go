@@ -35,9 +35,9 @@ func NewRecipe(recipe *query.Recipe) *Recipe {
 		Tags:        recipe.Tags,
 		IsFavorite:  recipe.IsFavorite,
 		CreatedAt:   recipe.CreatedAt,
-		CreatedBy:   NewUserID(recipe.CreatedBy),
+		CreatedByID: recipe.CreatedBy,
 		UpdatedAt:   recipe.UpdatedAt,
-		UpdatedBy:   NewUserID(recipe.UpdatedBy),
+		UpdatedByID: recipe.UpdatedBy,
 	}
 }
 

@@ -8,12 +8,9 @@ import (
 	"io"
 	"strconv"
 	"time"
-)
 
-type Node interface {
-	IsNode()
-	GetID() ID
-}
+	"github.com/b-sea/supply-run-api/internal/entity"
+)
 
 type RecipeResult interface {
 	IsRecipeResult()
@@ -65,13 +62,12 @@ type Recipe struct {
 	Tags        []string      `json:"tags"`
 	IsFavorite  bool          `json:"isFavorite"`
 	CreatedAt   time.Time     `json:"createdAt"`
-	CreatedBy   ID            `json:"createdBy"`
+	CreatedBy   UserResult    `json:"createdBy"`
 	UpdatedAt   time.Time     `json:"updatedAt"`
-	UpdatedBy   ID            `json:"updatedBy"`
+	UpdatedBy   UserResult    `json:"updatedBy"`
+	CreatedByID entity.ID     `json:"-"`
+	UpdatedByID entity.ID     `json:"-"`
 }
-
-func (Recipe) IsNode()        {}
-func (this Recipe) GetID() ID { return this.ID }
 
 func (Recipe) IsRecipeResult() {}
 
