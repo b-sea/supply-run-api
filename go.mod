@@ -8,6 +8,7 @@ require (
 	github.com/b-sea/go-server v0.0.0-20251116043651-ea4fd6c26375
 	github.com/bcicen/go-units v1.0.5
 	github.com/google/uuid v1.6.0
+	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/lithammer/shortuuid v3.0.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.34.0
@@ -37,6 +38,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect

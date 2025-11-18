@@ -66,11 +66,11 @@ func TestNewRecipe(t *testing.T) {
 		Tags: []string{
 			"good", "not good",
 		},
-		IsFavorite: true,
-		CreatedAt:  created,
-		CreatedBy:  model.NewUserID(entity.NewID("creator-123")),
-		UpdatedAt:  updated,
-		UpdatedBy:  model.NewUserID(entity.NewID("updater-123")),
+		IsFavorite:  true,
+		CreatedAt:   created,
+		CreatedByID: entity.NewID("creator-123"),
+		UpdatedAt:   updated,
+		UpdatedByID: entity.NewID("updater-123"),
 	}
 
 	assert.Equal(t, result, model.NewRecipe(recipe))

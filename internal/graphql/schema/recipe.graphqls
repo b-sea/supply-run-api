@@ -1,4 +1,7 @@
-type Recipe implements Node {
+type Recipe
+  @goExtraField(name: "CreatedByID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
+  @goExtraField(name: "UpdatedByID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
+{
   id: ID!
   name: String!
   url: String!
@@ -8,9 +11,9 @@ type Recipe implements Node {
   tags: [String!]!
   isFavorite: Boolean!
   createdAt: Time!
-  createdBy: ID!
+  createdBy: UserResult! @goField(forceResolver: true)
   updatedAt: Time!
-  updatedBy: ID!
+  updatedBy: UserResult! @goField(forceResolver: true)
 }
 
 type Ingredient {
