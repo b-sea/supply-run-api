@@ -32,9 +32,9 @@ func New(id entity.ID, name string, timestamp time.Time, userID entity.ID, optio
 		steps:       make([]string, 0),
 		ingredients: make([]Ingredient, 0),
 		tags:        make([]string, 0),
-		createdAt:   timestamp,
+		createdAt:   timestamp.UTC(),
 		createdBy:   userID,
-		updatedAt:   timestamp,
+		updatedAt:   timestamp.UTC(),
 		updatedBy:   userID,
 	}
 
@@ -90,7 +90,7 @@ func (r *Recipe) Update(timestamp time.Time, userID entity.ID, options ...Option
 		return nil
 	}
 
-	r.updatedAt = timestamp
+	r.updatedAt = timestamp.UTC()
 	r.updatedBy = userID
 
 	return nil

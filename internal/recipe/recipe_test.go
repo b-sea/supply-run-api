@@ -20,9 +20,9 @@ func TestNewRecipe(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, id, test.ID())
-	assert.Equal(t, timestamp, test.CreatedAt())
+	assert.Equal(t, timestamp.UTC(), test.CreatedAt())
 	assert.Equal(t, userID, test.CreatedBy())
-	assert.Equal(t, timestamp, test.UpdatedAt())
+	assert.Equal(t, timestamp.UTC(), test.UpdatedAt())
 	assert.Equal(t, userID, test.UpdatedBy())
 
 	// Create a recipe with an empty name
@@ -43,7 +43,7 @@ func TestUpdateRecipe(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "new name", test.Name())
-	assert.Equal(t, timestamp, test.UpdatedAt())
+	assert.Equal(t, timestamp.UTC(), test.UpdatedAt())
 	assert.Equal(t, userID, test.UpdatedBy())
 
 	// Update the recipe with the same name
@@ -51,7 +51,7 @@ func TestUpdateRecipe(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "new name", test.Name())
-	assert.Equal(t, timestamp, test.UpdatedAt())
+	assert.Equal(t, timestamp.UTC(), test.UpdatedAt())
 	assert.Equal(t, userID, test.UpdatedBy())
 
 	// Update the recipe with an invalid name
@@ -59,6 +59,6 @@ func TestUpdateRecipe(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "new name", test.Name())
-	assert.Equal(t, timestamp, test.UpdatedAt())
+	assert.Equal(t, timestamp.UTC(), test.UpdatedAt())
 	assert.Equal(t, userID, test.UpdatedBy())
 }
