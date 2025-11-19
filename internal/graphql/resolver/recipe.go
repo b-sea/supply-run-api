@@ -46,19 +46,9 @@ func (r *queryResolver) Recipe(ctx context.Context, id model.ID) (model.RecipeRe
 	return model.NewRecipe(result), nil
 }
 
-// Ingredients is the resolver for the ingredients field.
-func (r *queryResolver) Ingredients(ctx context.Context) ([]string, error) {
-	result, err := r.queries.GetIngredients(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// Tags is the resolver for the tags field.
-func (r *queryResolver) Tags(ctx context.Context) ([]string, error) {
-	result, err := r.queries.GetTags(ctx)
+// RecipeTags is the resolver for the tags field.
+func (r *queryResolver) RecipeTags(ctx context.Context) ([]string, error) {
+	result, err := r.queries.AllRecipeTags(ctx)
 	if err != nil {
 		return nil, err
 	}

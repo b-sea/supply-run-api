@@ -10,16 +10,14 @@ import (
 var _ query.Repository = (*QueryRepository)(nil)
 
 type QueryRepository struct {
-	FindRecipesResult    []*query.Recipe
-	FindRecipesErr       error
-	GetRecipesResult     []*query.Recipe
-	GetRecipesErr        error
-	GetIngredientsResult []string
-	GetIngredientsErr    error
-	GetTagsResult        []string
-	GetTagsErr           error
-	GetUsersResult       []*query.User
-	GetUsersErr          error
+	FindRecipesResult   []*query.Recipe
+	FindRecipesErr      error
+	GetRecipesResult    []*query.Recipe
+	GetRecipesErr       error
+	AllRecipeTagsResult []string
+	AllRecipeTagsErr    error
+	GetUsersResult      []*query.User
+	GetUsersErr         error
 }
 
 func (m *QueryRepository) FindRecipes(
@@ -35,12 +33,8 @@ func (m *QueryRepository) GetRecipes(ctx context.Context, id []entity.ID) ([]*qu
 	return m.GetRecipesResult, m.GetRecipesErr
 }
 
-func (m *QueryRepository) GetIngredients(ctx context.Context) ([]string, error) {
-	return m.GetIngredientsResult, m.GetIngredientsErr
-}
-
-func (m *QueryRepository) GetTags(ctx context.Context) ([]string, error) {
-	return m.GetTagsResult, m.GetTagsErr
+func (m *QueryRepository) AllRecipeTags(ctx context.Context) ([]string, error) {
+	return m.AllRecipeTagsResult, m.AllRecipeTagsErr
 }
 
 func (m *QueryRepository) GetUsers(ctx context.Context, ids []entity.ID) ([]*query.User, error) {

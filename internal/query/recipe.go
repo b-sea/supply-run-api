@@ -88,21 +88,9 @@ func (s *Service) GetRecipe(ctx context.Context, id entity.ID) (*Recipe, error) 
 	return found[0], nil
 }
 
-// GetIngredients returns a case-insensitive list of unique ingredients found on recipes.
-func (s *Service) GetIngredients(ctx context.Context) ([]string, error) {
-	found, err := s.repo.GetIngredients(ctx)
-	if err != nil {
-		return nil, queryError(err)
-	}
-
-	slices.Sort(found)
-
-	return found, nil
-}
-
-// GetTags returns a case-insensitive list of unique tags found on recipes.
-func (s *Service) GetTags(ctx context.Context) ([]string, error) {
-	found, err := s.repo.GetTags(ctx)
+// AllRecipeTags returns a case-insensitive list of unique tags found on recipes.
+func (s *Service) AllRecipeTags(ctx context.Context) ([]string, error) {
+	found, err := s.repo.AllRecipeTags(ctx)
 	if err != nil {
 		return nil, queryError(err)
 	}
