@@ -13,8 +13,8 @@ func TestSetSystem(t *testing.T) {
 	test := unit.New("goober", "gr")
 
 	// Set the system
-	unit.SetSystem(unit.System("special"))(test)
-	assert.Equal(t, unit.System("special"), test.System())
+	unit.SetSystem("special")(test)
+	assert.Equal(t, "special", test.System())
 }
 
 func TestSetBaseType(t *testing.T) {
@@ -23,8 +23,8 @@ func TestSetBaseType(t *testing.T) {
 	test := unit.New("goober", "gr")
 
 	// Set the base type
-	unit.SetBaseType(unit.BaseType("diagonal"))(test)
-	assert.Equal(t, unit.BaseType("diagonal"), test.BaseType())
+	unit.SetBaseType("diagonal")(test)
+	assert.Equal(t, "diagonal", test.BaseType())
 }
 
 func TestWithCustomPlural(t *testing.T) {

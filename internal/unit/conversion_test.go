@@ -40,8 +40,8 @@ func TestKilo(t *testing.T) {
 	assert.Equal(t, gram, test.From())
 	assert.Equal(t, "kilogram", test.To().Name())
 	assert.Equal(t, "kg", test.To().Symbol())
-	assert.Equal(t, unit.System("metric"), test.To().System())
-	assert.Equal(t, unit.BaseType("mass"), test.To().BaseType())
+	assert.Equal(t, "metric", test.To().System())
+	assert.Equal(t, "mass", test.To().BaseType())
 	assert.Equal(t, float64(1000), test.Ratio())
 }
 
@@ -54,8 +54,8 @@ func TestCenti(t *testing.T) {
 	assert.Equal(t, gram, test.From())
 	assert.Equal(t, "centigram", test.To().Name())
 	assert.Equal(t, "cg", test.To().Symbol())
-	assert.Equal(t, unit.System("metric"), test.To().System())
-	assert.Equal(t, unit.BaseType("mass"), test.To().BaseType())
+	assert.Equal(t, "metric", test.To().System())
+	assert.Equal(t, "mass", test.To().BaseType())
 	assert.Equal(t, float64(.01), test.Ratio())
 }
 
@@ -68,7 +68,7 @@ func TestMilli(t *testing.T) {
 	assert.Equal(t, gram, test.From())
 	assert.Equal(t, "milligram", test.To().Name())
 	assert.Equal(t, "mg", test.To().Symbol())
-	assert.Equal(t, unit.System("metric"), test.To().System())
-	assert.Equal(t, unit.BaseType("mass"), test.To().BaseType())
+	assert.Equal(t, "metric", test.To().System())
+	assert.Equal(t, "mass", test.To().BaseType())
 	assert.Equal(t, float64(.001), test.Ratio())
 }

@@ -5,22 +5,14 @@ import (
 	"github.com/b-sea/supply-run-api/internal/entity"
 )
 
-type (
-	// System represents a system of units (metric, imperial, us, etc).
-	System string
-
-	// BaseType represents a core type of unit (mass, length, temperature, etc).
-	BaseType string
-)
-
 // Unit is a unit of measurement.
 type Unit struct {
 	id     entity.ID
 	name   string
 	plural string
 	symbol string
-	base   BaseType
-	system System
+	base   string
+	system string
 }
 
 // New creates a new Unit.
@@ -61,12 +53,12 @@ func (u *Unit) Symbol() string {
 	return u.symbol
 }
 
-// BaseType returns the Unit base type.
-func (u *Unit) BaseType() BaseType {
+// BaseType returns the base type of unit (mass, length, temperature, etc).
+func (u *Unit) BaseType() string {
 	return u.base
 }
 
-// System returns the Unit system.
-func (u *Unit) System() System {
+// System returns the Unit system (metric, imperial, us, etc).
+func (u *Unit) System() string {
 	return u.system
 }
