@@ -42,6 +42,5 @@ type RecipeEdge {
 extend type Query {
   findRecipes(filter: RecipeFilter, page: Page, order: Order): RecipeConnection!
   recipe(id: ID!): RecipeResult!
-  ingredients: [String!]!
-  tags: [String!]!
+  recipeTags: [String!]!
 }

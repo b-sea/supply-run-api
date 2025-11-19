@@ -163,65 +163,6 @@ func TestQueryRecipe(t *testing.T) {
 	}
 }
 
-func TestQueryIngredients(t *testing.T) {
-	t.Parallel()
-
-	type testCase struct {
-		repo     query.Repository
-		options  []client.Option
-		query    string
-		response map[string]any
-		err      error
-	}
-
-	tests := map[string]testCase{
-		"success": {
-			repo: &mock.QueryRepository{
-				GetIngredientsResult: []string{
-					"bread",
-					"mustard",
-					"cheese",
-				},
-			},
-			query: `query { ingredients }`,
-			response: map[string]any{
-				"ingredients": []any{
-					"bread",
-					"cheese",
-					"mustard",
-				},
-			},
-			err: nil,
-		},
-		"repo error": {
-			repo: &mock.QueryRepository{
-				GetIngredientsErr: errors.New("some random error"),
-			},
-			query:    `query { ingredients }`,
-			response: nil,
-			err:      errors.New("some random error"),
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
-			testClient := client.New(server)
-
-			var response map[string]any
-
-			err := testClient.Post(test.query, &response, test.options...)
-
-			assert.Equal(t, test.response, response)
-			if test.err == nil {
-				assert.NoError(t, err)
-			} else {
-				assert.ErrorAs(t, err, &test.err)
-			}
-		})
-	}
-}
-
 func TestQueryTags(t *testing.T) {
 	t.Parallel()
 
@@ -236,14 +177,14 @@ func TestQueryTags(t *testing.T) {
 	tests := map[string]testCase{
 		"success": {
 			repo: &mock.QueryRepository{
-				GetTagsResult: []string{
+				AllRecipeTagsResult: []string{
 					"vegan",
 					"breakfast",
 				},
 			},
-			query: `query { tags }`,
+			query: `query { recipeTags }`,
 			response: map[string]any{
-				"tags": []any{
+				"recipeTags": []any{
 					"breakfast",
 					"vegan",
 				},
@@ -252,9 +193,9 @@ func TestQueryTags(t *testing.T) {
 		},
 		"repo error": {
 			repo: &mock.QueryRepository{
-				GetTagsErr: errors.New("some random error"),
+				AllRecipeTagsErr: errors.New("some random error"),
 			},
-			query:    `query { tags }`,
+			query:    `query { recipeTags }`,
 			response: nil,
 			err:      errors.New("some random error"),
 		},

@@ -253,7 +253,7 @@ func TestGetRecipe(t *testing.T) {
 	}
 }
 
-func TestGetIngredients(t *testing.T) {
+func TestAllRecipeTags(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
@@ -265,57 +265,10 @@ func TestGetIngredients(t *testing.T) {
 	tests := map[string]testCase{
 		"success": {
 			repo: &mock.QueryRepository{
-				GetIngredientsResult: []string{
-					"milk", "bread",
-				},
-				GetIngredientsErr: nil,
-			},
-			result: []string{
-				"bread", "milk",
-			},
-			err: nil,
-		},
-		"unknown error": {
-			repo: &mock.QueryRepository{
-				GetIngredientsResult: nil,
-				GetIngredientsErr:    errors.New("something went wrong"),
-			},
-			result: nil,
-			err:    errors.New("something went wrong"),
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			service := query.NewService(test.repo)
-			result, err := service.GetIngredients(context.Background())
-
-			assert.Equal(t, test.result, result)
-			if test.err == nil {
-				assert.NoError(t, err)
-			} else {
-				assert.ErrorAs(t, err, &test.err)
-			}
-		})
-	}
-}
-
-func TestGetTags(t *testing.T) {
-	t.Parallel()
-
-	type testCase struct {
-		repo   query.Repository
-		result []string
-		err    error
-	}
-
-	tests := map[string]testCase{
-		"success": {
-			repo: &mock.QueryRepository{
-				GetTagsResult: []string{
+				AllRecipeTagsResult: []string{
 					"gluten free", "breakfast",
 				},
-				GetTagsErr: nil,
+				AllRecipeTagsErr: nil,
 			},
 			result: []string{
 				"breakfast", "gluten free",
@@ -324,8 +277,8 @@ func TestGetTags(t *testing.T) {
 		},
 		"unknown error": {
 			repo: &mock.QueryRepository{
-				GetTagsResult: nil,
-				GetTagsErr:    errors.New("something went wrong"),
+				AllRecipeTagsResult: nil,
+				AllRecipeTagsErr:    errors.New("something went wrong"),
 			},
 			result: nil,
 			err:    errors.New("something went wrong"),
@@ -335,7 +288,7 @@ func TestGetTags(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			service := query.NewService(test.repo)
-			result, err := service.GetTags(context.Background())
+			result, err := service.AllRecipeTags(context.Background())
 
 			assert.Equal(t, test.result, result)
 			if test.err == nil {
