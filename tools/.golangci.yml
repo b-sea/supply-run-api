@@ -17,6 +17,9 @@ linters:
       - path: internal/recipe/option.go
         linters:
           - err113
+      - path: internal/unit/conversion.go
+        linters:
+          - err113
 
       # Exclude some linters from running on gqlgen generated files.
       - path: internal/graphql/resolver
@@ -42,6 +45,7 @@ linters:
         - id
         - r
         - i
+        - to
 
 issues:
   max-issues-per-linter: 0
