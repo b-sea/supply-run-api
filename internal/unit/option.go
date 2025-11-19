@@ -12,15 +12,15 @@ var (
 // Option is a Unit creation option.
 type Option func(u *Unit)
 
-// SetSystem sets a System on the Unit.
-func SetSystem(system System) Option {
+// SetSystem sets a system on the Unit.
+func SetSystem(system string) Option {
 	return func(u *Unit) {
 		u.system = system
 	}
 }
 
-// SetBaseType sets a BaseType on the Unit.
-func SetBaseType(base BaseType) Option {
+// SetBaseType sets a base type of the Unit.
+func SetBaseType(base string) Option {
 	return func(u *Unit) {
 		u.base = base
 	}
