@@ -103,7 +103,7 @@ func TestQueryRecipe(t *testing.T) {
 				},
 			},
 			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
-			query:   `query recipeByID($id: ID!){ recipe(id: $id) { __typename ...on Recipe { id }}}`,
+			query:   `query test($id: ID!){ recipe(id: $id) { __typename ...on Recipe { id }}}`,
 			response: map[string]any{
 				"recipe": map[string]any{
 					"__typename": "Recipe",
@@ -117,7 +117,7 @@ func TestQueryRecipe(t *testing.T) {
 				GetRecipesResult: []*query.Recipe{},
 			},
 			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
-			query:   `query recipeByID($id: ID!){ recipe(id: $id) { __typename ...on NotFoundError { id }}}`,
+			query:   `query test($id: ID!){ recipe(id: $id) { __typename ...on NotFoundError { id }}}`,
 			response: map[string]any{
 				"recipe": map[string]any{
 					"__typename": "NotFoundError",
@@ -131,7 +131,7 @@ func TestQueryRecipe(t *testing.T) {
 				GetRecipesResult: []*query.Recipe{},
 			},
 			options: []client.Option{client.Var("id", model.NewUserID(entity.NewID("1")).String())},
-			query:   `query recipeByID($id: ID!){ recipe(id: $id) { __typename ...on NotFoundError { id }}}`,
+			query:   `query test($id: ID!){ recipe(id: $id) { __typename ...on NotFoundError { id }}}`,
 			response: map[string]any{
 				"recipe": map[string]any{
 					"__typename": "NotFoundError",
@@ -145,7 +145,7 @@ func TestQueryRecipe(t *testing.T) {
 				GetRecipesErr: errors.New("some random error"),
 			},
 			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
-			query:    `query recipeByID($id: ID!){ recipe(id: $id) { __typename ...on Recipe { id }}}`,
+			query:    `query test($id: ID!){ recipe(id: $id) { __typename ...on Recipe { id }}}`,
 			response: nil,
 			err:      errors.New("some random error"),
 		},
@@ -198,7 +198,7 @@ func TestQueryRecipeCreatedBy(t *testing.T) {
 				GetUsersResult: []*query.User{{ID: entity.NewID("U1")}},
 			},
 			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("R1")).String())},
-			query:   `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { createdBy { __typename ...on User { id }}}}}`,
+			query:   `query test($id: ID!){ recipe(id: $id) { ...on Recipe { createdBy { __typename ...on User { id }}}}}`,
 			response: map[string]any{
 				"recipe": map[string]any{
 					"createdBy": map[string]any{
@@ -217,7 +217,7 @@ func TestQueryRecipeCreatedBy(t *testing.T) {
 				GetUsersErr: errors.New("some random error"),
 			},
 			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
-			query:    `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { createdBy { __typename ...on User { id }}}}}`,
+			query:    `query test($id: ID!){ recipe(id: $id) { ...on Recipe { createdBy { __typename ...on User { id }}}}}`,
 			response: nil,
 			err:      errors.New("some random error"),
 		},
@@ -270,7 +270,7 @@ func TestQueryRecipeUpdatedBy(t *testing.T) {
 				GetUsersResult: []*query.User{{ID: entity.NewID("U1")}},
 			},
 			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("R1")).String())},
-			query:   `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { updatedBy { __typename ...on User { id }}}}}`,
+			query:   `query test($id: ID!){ recipe(id: $id) { ...on Recipe { updatedBy { __typename ...on User { id }}}}}`,
 			response: map[string]any{
 				"recipe": map[string]any{
 					"updatedBy": map[string]any{
@@ -289,7 +289,7 @@ func TestQueryRecipeUpdatedBy(t *testing.T) {
 				GetUsersErr: errors.New("some random error"),
 			},
 			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
-			query:    `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { updatedBy { __typename ...on User { id }}}}}`,
+			query:    `query test($id: ID!){ recipe(id: $id) { ...on Recipe { updatedBy { __typename ...on User { id }}}}}`,
 			response: nil,
 			err:      errors.New("some random error"),
 		},
@@ -342,7 +342,7 @@ func TestQueryIngredientUnit(t *testing.T) {
 				GetUnitsResult: []*query.Unit{{ID: entity.NewID("U1")}},
 			},
 			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("R1")).String())},
-			query:   `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { ingredients { unit { __typename ...on Unit { id }}}}}}`,
+			query:   `query test($id: ID!){ recipe(id: $id) { ...on Recipe { ingredients { unit { __typename ...on Unit { id }}}}}}`,
 			response: map[string]any{
 				"recipe": map[string]any{
 					"ingredients": []any{
@@ -365,7 +365,7 @@ func TestQueryIngredientUnit(t *testing.T) {
 				GetUnitsErr: errors.New("some random error"),
 			},
 			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
-			query:    `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { ingredients { unit { __typename ...on Unit { id }}}}}}`,
+			query:    `query test($id: ID!){ recipe(id: $id) { ...on Recipe { ingredients { unit { __typename ...on Unit { id }}}}}}`,
 			response: nil,
 			err:      errors.New("some random error"),
 		},
@@ -386,6 +386,68 @@ func TestQueryIngredientUnit(t *testing.T) {
 			var response map[string]any
 
 			err := testClient.Post(test.query, &response, test.options...)
+
+			assert.Equal(t, test.response, response)
+			if test.err == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorAs(t, err, &test.err)
+			}
+		})
+	}
+}
+
+func TestQueryFindTags(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		recipes  query.RecipeRepository
+		query    string
+		response map[string]any
+		err      error
+	}
+
+	tests := map[string]testCase{
+		"success": {
+			recipes: &mock.QueryRecipeRepository{
+				FindTagsResult: []string{"vegan", "carnivore"},
+			},
+			query: `query { findTags }`,
+			response: map[string]any{
+				"findTags": []any{
+					"carnivore",
+					"vegan",
+				},
+			},
+			err: nil,
+		},
+		"repo error": {
+			recipes: &mock.QueryRecipeRepository{
+				FindTagsErr: errors.New("some random error"),
+			},
+			query: `query { findTags }`,
+			response: map[string]any{
+				"findTags": nil,
+			},
+			err: errors.New("some random error"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			server := graphql.New(
+				query.NewService(
+					test.recipes,
+					&mock.QueryUnitRepository{},
+					&mock.QueryUserRepository{},
+				),
+				metrics.NewNoOp(),
+			)
+			testClient := client.New(server)
+
+			var response map[string]any
+
+			err := testClient.Post(test.query, &response)
 
 			assert.Equal(t, test.response, response)
 			if test.err == nil {

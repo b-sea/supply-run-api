@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"slices"
 
 	"github.com/b-sea/supply-run-api/internal/entity"
 )
@@ -85,4 +86,16 @@ func (s *Service) GetRecipe(ctx context.Context, id entity.ID) (*Recipe, error) 
 	}
 
 	return found[0], nil
+}
+
+// FindTags returns a unique case-insensitive list of recipe tags.
+func (s *Service) FindTags(ctx context.Context, filter *string) ([]string, error) {
+	found, err := s.recipes.FindTags(ctx, filter)
+	if err != nil {
+		return nil, queryError(err)
+	}
+
+	slices.Sort(found)
+
+	return found, nil
 }

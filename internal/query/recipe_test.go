@@ -252,3 +252,49 @@ func TestGetRecipe(t *testing.T) {
 		})
 	}
 }
+
+func TestFindTags(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		repo   query.RecipeRepository
+		result []string
+		err    error
+	}
+
+	tests := map[string]testCase{
+		"success": {
+			repo: &mock.QueryRecipeRepository{
+				FindTagsResult: []string{"vegan", "carnivore"},
+				FindTagsErr:    nil,
+			},
+			result: []string{
+				"carnivore",
+				"vegan",
+			},
+			err: nil,
+		},
+		"unknown error": {
+			repo: &mock.QueryRecipeRepository{
+				FindTagsResult: nil,
+				FindTagsErr:    errors.New("something went wrong"),
+			},
+			result: nil,
+			err:    errors.New("something went wrong"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			service := query.NewService(test.repo, &mock.QueryUnitRepository{}, &mock.QueryUserRepository{})
+			result, err := service.FindTags(context.Background(), nil)
+
+			assert.Equal(t, test.result, result)
+			if test.err == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorAs(t, err, &test.err)
+			}
+		})
+	}
+}
