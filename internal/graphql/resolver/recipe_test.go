@@ -425,11 +425,9 @@ func TestQueryFindTags(t *testing.T) {
 			recipes: &mock.QueryRecipeRepository{
 				FindTagsErr: errors.New("some random error"),
 			},
-			query: `query { findTags }`,
-			response: map[string]any{
-				"findTags": nil,
-			},
-			err: errors.New("some random error"),
+			query:    `query { findTags }`,
+			response: map[string]any(nil),
+			err:      errors.New("some random error"),
 		},
 	}
 
