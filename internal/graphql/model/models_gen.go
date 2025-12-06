@@ -93,7 +93,7 @@ func (Recipe) IsRecipeResult() {}
 
 type RecipeConnection struct {
 	PageInfo *PageInfo     `json:"pageInfo"`
-	Edges    []*RecipeEdge `json:"edges,omitempty"`
+	Edges    []*RecipeEdge `json:"edges"`
 }
 
 type RecipeEdge struct {

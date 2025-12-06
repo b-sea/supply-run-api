@@ -35,7 +35,7 @@ input RecipeFilter {
 
 type RecipeConnection {
   pageInfo: PageInfo!
-  edges: [RecipeEdge!]
+  edges: [RecipeEdge!]!
 }
 
 type RecipeEdge {
@@ -46,5 +46,5 @@ type RecipeEdge {
 extend type Query {
   findRecipes(filter: RecipeFilter, page: Page, order: Order): RecipeConnection!
   recipe(id: ID!): RecipeResult!
-  findTags(filter: String): [String!]
+  findTags(filter: String): [String!]!
 }
