@@ -68,6 +68,7 @@ type ComplexityRoot struct {
 	Query struct {
 		FindRecipes func(childComplexity int, filter *model.RecipeFilter, page *model.Page, order *model.Order) int
 		FindTags    func(childComplexity int, filter *string) int
+		Node        func(childComplexity int, id model.ID) int
 		Recipe      func(childComplexity int, id model.ID) int
 	}
 
@@ -114,6 +115,7 @@ type IngredientResolver interface {
 	Unit(ctx context.Context, obj *model.Ingredient) (model.UnitResult, error)
 }
 type QueryResolver interface {
+	Node(ctx context.Context, id model.ID) (model.Node, error)
 	FindRecipes(ctx context.Context, filter *model.RecipeFilter, page *model.Page, order *model.Order) (*model.RecipeConnection, error)
 	Recipe(ctx context.Context, id model.ID) (model.RecipeResult, error)
 	FindTags(ctx context.Context, filter *string) ([]string, error)
@@ -216,6 +218,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.FindTags(childComplexity, args["filter"].(*string)), true
+	case "Query.node":
+		if e.complexity.Query.Node == nil {
+			break
+		}
+
+		args, err := ec.field_Query_node_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Node(childComplexity, args["id"].(model.ID)), true
 	case "Query.recipe":
 		if e.complexity.Query.Recipe == nil {
 			break
@@ -464,10 +477,17 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../schema/error.graphqls", Input: `type NotFoundError {
+	{Name: "../schema/error.graphqls", Input: `type NotFoundError implements Node {
   id: ID!
 }`, BuiltIn: false},
-	{Name: "../schema/recipe.graphqls", Input: `type Recipe
+	{Name: "../schema/node.graphqls", Input: `interface Node {
+  id: ID!
+}
+
+extend type Query {
+  node(id: ID!): Node!
+}`, BuiltIn: false},
+	{Name: "../schema/recipe.graphqls", Input: `type Recipe implements Node
   @goExtraField(name: "CreatedByID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
   @goExtraField(name: "UpdatedByID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
 {
@@ -560,7 +580,7 @@ input Order {
   Direction: Direction
 }
 `, BuiltIn: false},
-	{Name: "../schema/unit.graphqls", Input: `type Unit {
+	{Name: "../schema/unit.graphqls", Input: `type Unit implements Node {
     id: ID!
     name: String!
     symbol: String!
@@ -569,7 +589,7 @@ input Order {
 }
 
 union UnitResult = Unit | NotFoundError`, BuiltIn: false},
-	{Name: "../schema/user.graphqls", Input: `type User {
+	{Name: "../schema/user.graphqls", Input: `type User implements Node {
     id: ID!
     username: String!
 }
@@ -622,6 +642,17 @@ func (ec *executionContext) field_Query_findTags_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_node_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐID)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -916,6 +947,47 @@ func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, f
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Cursor does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_node(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_node,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Node(ctx, fc.Args["id"].(model.ID))
+		},
+		nil,
+		ec.marshalNNode2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐNode,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_node_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -3440,6 +3512,43 @@ func (ec *executionContext) unmarshalInputRecipeFilter(ctx context.Context, obj 
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj model.Node) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.User:
+		return ec._User(ctx, sel, &obj)
+	case *model.User:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._User(ctx, sel, obj)
+	case model.Unit:
+		return ec._Unit(ctx, sel, &obj)
+	case *model.Unit:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Unit(ctx, sel, obj)
+	case model.Recipe:
+		return ec._Recipe(ctx, sel, &obj)
+	case *model.Recipe:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Recipe(ctx, sel, obj)
+	case model.NotFoundError:
+		return ec._NotFoundError(ctx, sel, &obj)
+	case *model.NotFoundError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NotFoundError(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _RecipeResult(ctx context.Context, sel ast.SelectionSet, obj model.RecipeResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -3593,7 +3702,7 @@ func (ec *executionContext) _Ingredient(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var notFoundErrorImplementors = []string{"NotFoundError", "RecipeResult", "UnitResult", "UserResult"}
+var notFoundErrorImplementors = []string{"NotFoundError", "Node", "RecipeResult", "UnitResult", "UserResult"}
 
 func (ec *executionContext) _NotFoundError(ctx context.Context, sel ast.SelectionSet, obj *model.NotFoundError) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, notFoundErrorImplementors)
@@ -3699,6 +3808,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "node":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_node(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "findRecipes":
 			field := field
 
@@ -3793,7 +3924,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var recipeImplementors = []string{"Recipe", "RecipeResult"}
+var recipeImplementors = []string{"Recipe", "Node", "RecipeResult"}
 
 func (ec *executionContext) _Recipe(ctx context.Context, sel ast.SelectionSet, obj *model.Recipe) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, recipeImplementors)
@@ -4034,7 +4165,7 @@ func (ec *executionContext) _RecipeEdge(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var unitImplementors = []string{"Unit", "UnitResult"}
+var unitImplementors = []string{"Unit", "Node", "UnitResult"}
 
 func (ec *executionContext) _Unit(ctx context.Context, sel ast.SelectionSet, obj *model.Unit) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, unitImplementors)
@@ -4093,7 +4224,7 @@ func (ec *executionContext) _Unit(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var userImplementors = []string{"User", "UserResult"}
+var userImplementors = []string{"User", "Node", "UserResult"}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
@@ -4604,6 +4735,16 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNNode2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐNode(ctx context.Context, sel ast.SelectionSet, v model.Node) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Node(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {

@@ -33,6 +33,7 @@ linters:
    - depguard
    - noinlineerr
    - exhaustruct
+   - cyclop
 
   settings:
     wsl_v5:
