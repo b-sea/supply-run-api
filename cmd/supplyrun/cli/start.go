@@ -10,8 +10,8 @@ import (
 	"github.com/b-sea/go-config/config"
 	"github.com/b-sea/go-server/server"
 	"github.com/b-sea/supply-run-api/internal/graphql"
+	"github.com/b-sea/supply-run-api/internal/mariadb"
 	"github.com/b-sea/supply-run-api/internal/metrics"
-	"github.com/b-sea/supply-run-api/internal/mock"
 	"github.com/b-sea/supply-run-api/internal/query"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
@@ -40,6 +40,9 @@ func startRun() func(cmd *cobra.Command, args []string) error {
 
 		log := setupLogger(cfg)
 		recorder := metrics.NewPrometheus()
+		repository := mariadb.NewRepository(
+			mariadb.BasicConnector(cfg.MariaDB.Host, cfg.MariaDB.Username, cfg.MariaDB.Password),
+		)
 
 		svr := server.New(log, recorder,
 			server.SetPort(cfg.Server.Port),
@@ -49,13 +52,12 @@ func startRun() func(cmd *cobra.Command, args []string) error {
 			server.AddHandler(
 				"/graphql",
 				graphql.New(
-					query.NewService(
-						&mock.QueryRecipeRepository{},
-						&mock.QueryUnitRepository{},
-						&mock.QueryUserRepository{},
-					), recorder),
+					query.NewService(repository, repository, repository),
+					recorder,
+				),
 				http.MethodPost,
 			),
+			server.AddHealthDependency("database", repository),
 		)
 
 		channel := make(chan os.Signal, 1)
