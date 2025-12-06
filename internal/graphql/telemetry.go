@@ -13,7 +13,7 @@ import (
 
 // Recorder defines functions for tracking GraphQL-based metrics.
 type Recorder interface {
-	ObserveResolverDuration(object string, field string, status string, duration time.Duration)
+	ObserveGraphqlResolverDuration(object string, field string, status string, duration time.Duration)
 	ObserveGraphqlError()
 }
 
@@ -46,7 +46,7 @@ func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 				Str("status", status).
 				Dur("duration_ms", duration).
 				Msg("resolver complete")
-			recorder.ObserveResolverDuration(field.Object, field.Field.Name, status, duration)
+			recorder.ObserveGraphqlResolverDuration(field.Object, field.Field.Name, status, duration)
 		}()
 
 		return result, err

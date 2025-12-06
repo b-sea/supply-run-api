@@ -26,11 +26,11 @@ func NewNoOp() *NoOp {
 	return &NoOp{}
 }
 
-// ObserveResolverDuration records the duration of a GraphQL resolver.
-func (r *NoOp) ObserveResolverDuration(string, string, string, time.Duration) {}
+// ObserveGraphqlResolverDuration records the duration of a GraphQL resolver.
+func (r *NoOp) ObserveGraphqlResolverDuration(string, string, string, time.Duration) {}
 
 // ObserveGraphqlError records an unhandled GraphQL error.
 func (r *NoOp) ObserveGraphqlError() {}
 
-// ObserveMariaDBTxDuration records the duration of a MariaDB transaction.
-func (r *NoOp) ObserveMariaDBTxDuration(string, time.Duration) {}
+// ObserveMariadbTxDuration records the duration of a MariaDB transaction.
+func (r *NoOp) ObserveMariadbTxDuration(string, time.Duration) {}

@@ -5,7 +5,7 @@ go 1.25.4
 require (
 	github.com/99designs/gqlgen v0.17.83
 	github.com/b-sea/go-config v0.0.0-20251110193352-23af83323f6a
-	github.com/b-sea/go-server v1.1.1
+	github.com/b-sea/go-server v1.1.2-0.20251206184616-7c8caf1ba603
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/uuid v1.6.0
 	github.com/graph-gophers/dataloader v5.0.0+incompatible

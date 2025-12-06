@@ -12,6 +12,8 @@ github.com/b-sea/go-config v0.0.0-20251110193352-23af83323f6a h1:b3To8NcjJUUK1sB
 github.com/b-sea/go-config v0.0.0-20251110193352-23af83323f6a/go.mod h1:gt53LcQ6xxhsK7b8D8rJ8HEFQ/rGlgOMtgb7bCDTlQU=
 github.com/b-sea/go-server v1.1.1 h1:xY0baEDSTxGMukM1HMfJyrFiNcZkBw+LfHGFv1xhJbk=
 github.com/b-sea/go-server v1.1.1/go.mod h1:27U5WHkvVBD3nYzqqlq+LviaV0oCH8pMyu6Frvg/IbM=
+github.com/b-sea/go-server v1.1.2-0.20251206184616-7c8caf1ba603 h1:AhpQ8EDO5QWPNX4qOaK6pB9CCsOg43ng5j2gx5CeZwk=
+github.com/b-sea/go-server v1.1.2-0.20251206184616-7c8caf1ba603/go.mod h1:27U5WHkvVBD3nYzqqlq+LviaV0oCH8pMyu6Frvg/IbM=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=

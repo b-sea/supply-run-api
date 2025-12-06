@@ -26,16 +26,16 @@ var (
 type Prometheus struct {
 	metrics.Prometheus
 
-	resolverDuration  *prometheus.HistogramVec
-	graphqlError      prometheus.Counter
-	mariaDBTxDuration *prometheus.HistogramVec
+	graphqlResolverDuration *prometheus.HistogramVec
+	graphqlError            prometheus.Counter
+	mariadbTxDuration       *prometheus.HistogramVec
 }
 
 // NewPrometheus creates a new Prometheus recorder.
 func NewPrometheus() *Prometheus {
 	recorder := &Prometheus{
 		Prometheus: *metrics.NewPrometheus(namespace, metrics.WithGroupedCodes()),
-		resolverDuration: prometheus.NewHistogramVec(
+		graphqlResolverDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Namespace: namespace,
 				Subsystem: graphqlSubsystem,
@@ -52,7 +52,7 @@ func NewPrometheus() *Prometheus {
 				Help:      "Unhandled GraphQL Errors",
 			},
 		),
-		mariaDBTxDuration: prometheus.NewHistogramVec(
+		mariadbTxDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Namespace: namespace,
 				Subsystem: mariadbSubsystem,
@@ -63,15 +63,16 @@ func NewPrometheus() *Prometheus {
 		),
 	}
 
-	_ = prometheus.DefaultRegisterer.Register(recorder.resolverDuration)
+	_ = prometheus.DefaultRegisterer.Register(recorder.graphqlResolverDuration)
 	_ = prometheus.DefaultRegisterer.Register(recorder.graphqlError)
+	_ = prometheus.DefaultRegisterer.Register(recorder.mariadbTxDuration)
 
 	return recorder
 }
 
-// ObserveResolverDuration records the duration of a GraphQL resolver.
-func (p *Prometheus) ObserveResolverDuration(object string, field string, status string, duration time.Duration) {
-	p.resolverDuration.WithLabelValues(object, field, status).Observe(duration.Seconds())
+// ObserveGraphqlResolverDuration records the duration of a GraphQL resolver.
+func (p *Prometheus) ObserveGraphqlResolverDuration(object string, field string, status string, duration time.Duration) {
+	p.graphqlResolverDuration.WithLabelValues(object, field, status).Observe(duration.Seconds())
 }
 
 // ObserveGraphqlError records an unhandled GraphQL error.
@@ -80,6 +81,6 @@ func (p *Prometheus) ObserveGraphqlError() {
 }
 
 // ObserveMariaDBTxDuration records the duration of a MariaDB transaction.
-func (p *Prometheus) ObserveMariaDBTxDuration(status string, duration time.Duration) {
-	p.mariaDBTxDuration.WithLabelValues(status).Observe(duration.Seconds())
+func (p *Prometheus) ObserveMariadbTxDuration(status string, duration time.Duration) {
+	p.mariadbTxDuration.WithLabelValues(status).Observe(duration.Seconds())
 }

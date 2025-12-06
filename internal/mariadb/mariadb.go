@@ -23,7 +23,7 @@ const defaultTimeout = 20 * time.Second
 var sqlFS embed.FS
 
 type Recorder interface {
-	ObserveMariaDBTxDuration(status string, duration time.Duration)
+	ObserveMariadbTxDuration(status string, duration time.Duration)
 }
 
 type Connector func() *sql.DB
@@ -151,7 +151,7 @@ func (r *Repository) withTx(ctx context.Context, fn func(tx *sql.Tx) error) erro
 		duration := time.Since(start)
 
 		event.Dur("duration_ms", duration).Msg(message)
-		r.recorder.ObserveMariaDBTxDuration(status, duration)
+		r.recorder.ObserveMariadbTxDuration(status, duration)
 	}()
 
 	tx, err := r.db.BeginTx(ctx, nil)
