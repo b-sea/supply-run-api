@@ -12,6 +12,11 @@ import (
 	"github.com/b-sea/supply-run-api/internal/entity"
 )
 
+type Node interface {
+	IsNode()
+	GetID() ID
+}
+
 type RecipeResult interface {
 	IsRecipeResult()
 }
@@ -34,6 +39,9 @@ type Ingredient struct {
 type NotFoundError struct {
 	ID ID `json:"id"`
 }
+
+func (NotFoundError) IsNode()        {}
+func (this NotFoundError) GetID() ID { return this.ID }
 
 func (NotFoundError) IsRecipeResult() {}
 
@@ -78,6 +86,9 @@ type Recipe struct {
 	UpdatedByID entity.ID     `json:"-"`
 }
 
+func (Recipe) IsNode()        {}
+func (this Recipe) GetID() ID { return this.ID }
+
 func (Recipe) IsRecipeResult() {}
 
 type RecipeConnection struct {
@@ -105,12 +116,18 @@ type Unit struct {
 	System   string `json:"system"`
 }
 
+func (Unit) IsNode()        {}
+func (this Unit) GetID() ID { return this.ID }
+
 func (Unit) IsUnitResult() {}
 
 type User struct {
 	ID       ID     `json:"id"`
 	Username string `json:"username"`
 }
+
+func (User) IsNode()        {}
+func (this User) GetID() ID { return this.ID }
 
 func (User) IsUserResult() {}
 

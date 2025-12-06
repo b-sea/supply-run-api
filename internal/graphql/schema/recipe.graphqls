@@ -1,4 +1,4 @@
-type Recipe
+type Recipe implements Node
   @goExtraField(name: "CreatedByID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
   @goExtraField(name: "UpdatedByID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
 {

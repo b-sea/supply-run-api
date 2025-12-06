@@ -1,3 +1,3 @@
-type NotFoundError {
+type NotFoundError implements Node {
   id: ID!
 }

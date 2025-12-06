@@ -89,12 +89,8 @@ func (r *recipeResolver) UpdatedBy(ctx context.Context, obj *model.Recipe) (mode
 // Ingredient returns IngredientResolver implementation.
 func (r *Resolver) Ingredient() IngredientResolver { return &ingredientResolver{r} }
 
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
-
 // Recipe returns RecipeResolver implementation.
 func (r *Resolver) Recipe() RecipeResolver { return &recipeResolver{r} }
 
 type ingredientResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
 type recipeResolver struct{ *Resolver }
