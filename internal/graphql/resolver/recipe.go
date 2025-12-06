@@ -56,6 +56,16 @@ func (r *queryResolver) Recipe(ctx context.Context, id model.ID) (model.RecipeRe
 	return model.NewRecipe(result), nil
 }
 
+// FindTags is the resolver for the findTags field.
+func (r *queryResolver) FindTags(ctx context.Context, filter *string) ([]string, error) {
+	result, err := r.queries.FindTags(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // CreatedBy is the resolver for the createdBy field.
 func (r *recipeResolver) CreatedBy(ctx context.Context, obj *model.Recipe) (model.UserResult, error) {
 	result, err := dataloader.GetUser(ctx, obj.CreatedByID)

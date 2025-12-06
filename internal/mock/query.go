@@ -16,6 +16,8 @@ type QueryRecipeRepository struct {
 	FindRecipesErr    error
 	GetRecipesResult  []*query.Recipe
 	GetRecipesErr     error
+	FindTagsResult    []string
+	FindTagsErr       error
 }
 
 func (m *QueryRecipeRepository) FindRecipes(
@@ -29,6 +31,10 @@ func (m *QueryRecipeRepository) FindRecipes(
 
 func (m *QueryRecipeRepository) GetRecipes(ctx context.Context, id []entity.ID) ([]*query.Recipe, error) {
 	return m.GetRecipesResult, m.GetRecipesErr
+}
+
+func (m *QueryRecipeRepository) FindTags(ctx context.Context, filter *string) ([]string, error) {
+	return m.FindTagsResult, m.FindTagsErr
 }
 
 type QueryUnitRepository struct {
