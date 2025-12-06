@@ -47,6 +47,8 @@ linters:
         - r
         - i
         - to
+        - tx
+        - fn
 
 issues:
   max-issues-per-linter: 0

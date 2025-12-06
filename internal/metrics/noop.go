@@ -7,11 +7,13 @@ import (
 	"github.com/b-sea/go-server/metrics"
 	"github.com/b-sea/go-server/server"
 	"github.com/b-sea/supply-run-api/internal/graphql"
+	"github.com/b-sea/supply-run-api/internal/mariadb"
 )
 
 var (
 	_ server.Recorder  = (*NoOp)(nil)
 	_ graphql.Recorder = (*NoOp)(nil)
+	_ mariadb.Recorder = (*NoOp)(nil)
 )
 
 // NoOp is a simple metrics recorder that does nothing.
@@ -29,3 +31,6 @@ func (r *NoOp) ObserveResolverDuration(string, string, string, time.Duration) {}
 
 // ObserveGraphqlError records an unhandled GraphQL error.
 func (r *NoOp) ObserveGraphqlError() {}
+
+// ObserveMariaDBTxDuration records the duration of a MariaDB transaction.
+func (r *NoOp) ObserveMariaDBTxDuration(string, time.Duration) {}

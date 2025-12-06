@@ -42,7 +42,12 @@ func startRun() func(cmd *cobra.Command, args []string) error {
 		recorder := metrics.NewPrometheus()
 		repository := mariadb.NewRepository(
 			mariadb.BasicConnector(cfg.MariaDB.Host, cfg.MariaDB.Username, cfg.MariaDB.Password),
+			recorder,
 		)
+
+		if err := repository.Setup(); err != nil {
+			return err
+		}
 
 		svr := server.New(log, recorder,
 			server.SetPort(cfg.Server.Port),
@@ -70,6 +75,8 @@ func startRun() func(cmd *cobra.Command, args []string) error {
 		}()
 
 		<-channel
+
+		_ = repository.Close()
 
 		if err := svr.Stop(); err != nil {
 			log.Error().Err(err).Msg("server forced to shutdown")
