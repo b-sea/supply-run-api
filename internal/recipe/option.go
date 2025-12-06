@@ -2,11 +2,10 @@ package recipe
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"strings"
 
-	units "github.com/bcicen/go-units"
+	"github.com/b-sea/supply-run-api/internal/entity"
 )
 
 // Option is a Recipe create or update option.
@@ -91,12 +90,10 @@ func ClearSteps() Option {
 }
 
 // AddIngredient adds an ingredient to a Recipe.
-// If the ingredient already exists on the Recipe, they will be combined.
 // Error cases:
-//   - Ingredient units cannot be converted when combining
 //   - Name is empty
 //   - Quantity is 0 or less
-func AddIngredient(name string, quantity float64, unit units.Unit) Option {
+func AddIngredient(name string, quantity float64, unitID entity.ID) Option {
 	return func(r *Recipe) (bool, error) {
 		if name == "" {
 			return false, errors.New("ingredient name cannot be empty")
@@ -106,34 +103,14 @@ func AddIngredient(name string, quantity float64, unit units.Unit) Option {
 			return false, errors.New("ingredient quantity must be greater than 0")
 		}
 
-		value := units.NewValue(quantity, unit)
-		appended := false
-
-		for i := range r.ingredients {
-			if !strings.EqualFold(r.ingredients[i].name, name) {
-				continue
-			}
-
-			converted, err := value.Convert(r.ingredients[i].value.Unit())
-			if err != nil {
-				return false, fmt.Errorf(
-					"cannot add %s to %s of %s",
-					value.String(),
-					r.ingredients[i].value.String(),
-					name,
-				)
-			}
-
-			r.ingredients[i].value = units.NewValue(
-				r.ingredients[i].value.Float()+converted.Float(),
-				r.ingredients[i].value.Unit(),
-			)
-			appended = true
-		}
-
-		if !appended {
-			r.ingredients = append(r.ingredients, Ingredient{name: name, value: value})
-		}
+		r.ingredients = append(
+			r.ingredients,
+			Ingredient{
+				name:     name,
+				quantity: quantity,
+				unitID:   unitID,
+			},
+		)
 
 		return true, nil
 	}

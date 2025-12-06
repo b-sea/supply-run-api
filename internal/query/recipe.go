@@ -2,7 +2,6 @@ package query
 
 import (
 	"context"
-	"slices"
 
 	"github.com/b-sea/supply-run-api/internal/entity"
 )
@@ -29,7 +28,7 @@ func (s *Service) FindRecipes(
 	pageSize := page.Size
 	page.Size += pagePadding
 
-	found, err := s.repo.FindRecipes(ctx, filter, page, order)
+	found, err := s.recipes.FindRecipes(ctx, filter, page, order)
 	if err != nil {
 		return nil, queryError(err)
 	}
@@ -76,7 +75,7 @@ func (s *Service) FindRecipes(
 
 // GetRecipe returns a single recipe from an id.
 func (s *Service) GetRecipe(ctx context.Context, id entity.ID) (*Recipe, error) {
-	found, err := s.repo.GetRecipes(ctx, []entity.ID{id})
+	found, err := s.recipes.GetRecipes(ctx, []entity.ID{id})
 	if err != nil {
 		return nil, queryError(err)
 	}
@@ -86,16 +85,4 @@ func (s *Service) GetRecipe(ctx context.Context, id entity.ID) (*Recipe, error) 
 	}
 
 	return found[0], nil
-}
-
-// AllRecipeTags returns a case-insensitive list of unique tags found on recipes.
-func (s *Service) AllRecipeTags(ctx context.Context) ([]string, error) {
-	found, err := s.repo.AllRecipeTags(ctx)
-	if err != nil {
-		return nil, queryError(err)
-	}
-
-	slices.Sort(found)
-
-	return found, nil
 }

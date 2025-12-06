@@ -17,19 +17,6 @@ type Recorder interface {
 	ObserveGraphqlError()
 }
 
-func operationTelemetry() graphql.OperationMiddleware {
-	return func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
-		op := graphql.GetOperationContext(ctx)
-
-		log := zerolog.Ctx(ctx)
-		log.UpdateContext(func(c zerolog.Context) zerolog.Context {
-			return c.Str("operation", string(op.Operation.Operation))
-		})
-
-		return next(log.WithContext(ctx))
-	}
-}
-
 func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 	return func(ctx context.Context, next graphql.Resolver) (any, error) {
 		start := time.Now()
@@ -40,15 +27,10 @@ func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 			return next(ctx)
 		}
 
-		log := zerolog.Ctx(ctx)
-		log.UpdateContext(func(c zerolog.Context) zerolog.Context {
-			return c.Str("object", field.Object).Str("field", field.Field.Name)
-		})
-
-		result, err := next(log.WithContext(ctx))
+		result, err := next(ctx)
 
 		defer func() {
-			event := log.Info() //nolint: zerologlint
+			event := zerolog.Ctx(ctx).Info() //nolint: zerologlint
 			status := "success"
 
 			if err != nil {
@@ -58,7 +40,12 @@ func fieldTelemetry(recorder Recorder) graphql.FieldMiddleware {
 
 			duration := time.Since(start)
 
-			event.Str("status", status).Dur("duration_ms", duration).Msg("resolver complete")
+			event.
+				Str("object", field.Object).
+				Str("field", field.Field.Name).
+				Str("status", status).
+				Dur("duration_ms", duration).
+				Msg("resolver complete")
 			recorder.ObserveResolverDuration(field.Object, field.Field.Name, status, duration)
 		}()
 

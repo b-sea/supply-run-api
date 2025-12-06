@@ -16,6 +16,7 @@ type Kind string
 // RecipeKind, et al. are custom GraphQL relay types.
 const (
 	RecipeKind = Kind("recipe")
+	UnitKind   = Kind("unit")
 	UserKind   = Kind("user")
 
 	delim            = ":"

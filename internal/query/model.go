@@ -24,7 +24,9 @@ type Recipe struct {
 
 // Ingredient is a query representation of a domain Ingredient.
 type Ingredient struct {
-	Name string
+	Name     string
+	Quantity float64
+	UnitID   entity.ID
 }
 
 // RecipeFilter defines all options available for finding recipes.
@@ -45,6 +47,22 @@ type RecipePage struct {
 type User struct {
 	ID       entity.ID
 	Username string
+}
+
+// Unit is a query representation of a domain Unit.
+type Unit struct {
+	ID       entity.ID
+	Name     string
+	Symbol   string
+	BaseType string
+	System   string
+}
+
+// Conversion is a query representation of a domain Conversion.
+type Conversion struct {
+	FromID entity.ID
+	ToID   entity.ID
+	Ratio  float64
 }
 
 // Direction is a sort direction.

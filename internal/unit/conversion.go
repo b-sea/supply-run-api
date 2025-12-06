@@ -64,7 +64,7 @@ func Kilo(unit *Unit) *Conversion {
 	return magnitude("kilo", "k", unit, 3) //nolint: mnd
 }
 
-// Centi creates a new Unit 100x larger than the given Unit and returns a Conversion between the two.
+// Centi creates a new Unit 100x smaller than the given Unit and returns a Conversion between the two.
 // The created unit will have a "centi" prefix.
 func Centi(unit *Unit) *Conversion {
 	return magnitude("centi", "c", unit, -2)

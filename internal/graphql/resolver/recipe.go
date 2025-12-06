@@ -13,6 +13,16 @@ import (
 	"github.com/b-sea/supply-run-api/internal/graphql/model"
 )
 
+// Unit is the resolver for the unit field.
+func (r *ingredientResolver) Unit(ctx context.Context, obj *model.Ingredient) (model.UnitResult, error) {
+	result, err := dataloader.GetUnit(ctx, obj.UnitID)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // FindRecipes is the resolver for the findRecipes field.
 func (r *queryResolver) FindRecipes(ctx context.Context, filter *model.RecipeFilter, page *model.Page, order *model.Order) (*model.RecipeConnection, error) {
 	result, err := r.queries.FindRecipes(
@@ -46,16 +56,6 @@ func (r *queryResolver) Recipe(ctx context.Context, id model.ID) (model.RecipeRe
 	return model.NewRecipe(result), nil
 }
 
-// RecipeTags is the resolver for the tags field.
-func (r *queryResolver) RecipeTags(ctx context.Context) ([]string, error) {
-	result, err := r.queries.AllRecipeTags(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
 // CreatedBy is the resolver for the createdBy field.
 func (r *recipeResolver) CreatedBy(ctx context.Context, obj *model.Recipe) (model.UserResult, error) {
 	result, err := dataloader.GetUser(ctx, obj.CreatedByID)
@@ -76,11 +76,15 @@ func (r *recipeResolver) UpdatedBy(ctx context.Context, obj *model.Recipe) (mode
 	return result, nil
 }
 
+// Ingredient returns IngredientResolver implementation.
+func (r *Resolver) Ingredient() IngredientResolver { return &ingredientResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 // Recipe returns RecipeResolver implementation.
 func (r *Resolver) Recipe() RecipeResolver { return &recipeResolver{r} }
 
+type ingredientResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type recipeResolver struct{ *Resolver }

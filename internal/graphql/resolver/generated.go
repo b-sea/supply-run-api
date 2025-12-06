@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Ingredient() IngredientResolver
 	Query() QueryResolver
 	Recipe() RecipeResolver
 }
@@ -48,7 +49,9 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Ingredient struct {
-		Name func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Quantity func(childComplexity int) int
+		Unit     func(childComplexity int) int
 	}
 
 	NotFoundError struct {
@@ -65,7 +68,6 @@ type ComplexityRoot struct {
 	Query struct {
 		FindRecipes func(childComplexity int, filter *model.RecipeFilter, page *model.Page, order *model.Order) int
 		Recipe      func(childComplexity int, id model.ID) int
-		RecipeTags  func(childComplexity int) int
 	}
 
 	Recipe struct {
@@ -93,16 +95,26 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Unit struct {
+		BaseType func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Symbol   func(childComplexity int) int
+		System   func(childComplexity int) int
+	}
+
 	User struct {
 		ID       func(childComplexity int) int
 		Username func(childComplexity int) int
 	}
 }
 
+type IngredientResolver interface {
+	Unit(ctx context.Context, obj *model.Ingredient) (model.UnitResult, error)
+}
 type QueryResolver interface {
 	FindRecipes(ctx context.Context, filter *model.RecipeFilter, page *model.Page, order *model.Order) (*model.RecipeConnection, error)
 	Recipe(ctx context.Context, id model.ID) (model.RecipeResult, error)
-	RecipeTags(ctx context.Context) ([]string, error)
 }
 type RecipeResolver interface {
 	CreatedBy(ctx context.Context, obj *model.Recipe) (model.UserResult, error)
@@ -135,6 +147,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Ingredient.Name(childComplexity), true
+	case "Ingredient.quantity":
+		if e.complexity.Ingredient.Quantity == nil {
+			break
+		}
+
+		return e.complexity.Ingredient.Quantity(childComplexity), true
+	case "Ingredient.unit":
+		if e.complexity.Ingredient.Unit == nil {
+			break
+		}
+
+		return e.complexity.Ingredient.Unit(childComplexity), true
 
 	case "NotFoundError.id":
 		if e.complexity.NotFoundError.ID == nil {
@@ -190,12 +214,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Recipe(childComplexity, args["id"].(model.ID)), true
-	case "Query.recipeTags":
-		if e.complexity.Query.RecipeTags == nil {
-			break
-		}
-
-		return e.complexity.Query.RecipeTags(childComplexity), true
 
 	case "Recipe.createdAt":
 		if e.complexity.Recipe.CreatedAt == nil {
@@ -295,6 +313,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.RecipeEdge.Node(childComplexity), true
+
+	case "Unit.baseType":
+		if e.complexity.Unit.BaseType == nil {
+			break
+		}
+
+		return e.complexity.Unit.BaseType(childComplexity), true
+	case "Unit.id":
+		if e.complexity.Unit.ID == nil {
+			break
+		}
+
+		return e.complexity.Unit.ID(childComplexity), true
+	case "Unit.name":
+		if e.complexity.Unit.Name == nil {
+			break
+		}
+
+		return e.complexity.Unit.Name(childComplexity), true
+	case "Unit.symbol":
+		if e.complexity.Unit.Symbol == nil {
+			break
+		}
+
+		return e.complexity.Unit.Symbol(childComplexity), true
+	case "Unit.system":
+		if e.complexity.Unit.System == nil {
+			break
+		}
+
+		return e.complexity.Unit.System(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -423,8 +472,12 @@ var sources = []*ast.Source{
   updatedBy: UserResult! @goField(forceResolver: true)
 }
 
-type Ingredient {
+type Ingredient 
+  @goExtraField(name: "UnitID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
+{
   name: String!
+  quantity: Float!
+  unit: UnitResult! @goField(forceResolver: true)
 }
 
 union RecipeResult = Recipe | NotFoundError
@@ -449,7 +502,6 @@ type RecipeEdge {
 extend type Query {
   findRecipes(filter: RecipeFilter, page: Page, order: Order): RecipeConnection!
   recipe(id: ID!): RecipeResult!
-  recipeTags: [String!]!
 }`, BuiltIn: false},
 	{Name: "../schema/schema.graphqls", Input: `directive @goField(
   forceResolver: Boolean
@@ -494,6 +546,15 @@ input Order {
   Direction: Direction
 }
 `, BuiltIn: false},
+	{Name: "../schema/unit.graphqls", Input: `type Unit {
+    id: ID!
+    name: String!
+    symbol: String!
+    baseType: String!
+    system: String!
+}
+
+union UnitResult = Unit | NotFoundError`, BuiltIn: false},
 	{Name: "../schema/user.graphqls", Input: `type User {
     id: ID!
     username: String!
@@ -626,6 +687,64 @@ func (ec *executionContext) fieldContext_Ingredient_name(_ context.Context, fiel
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ingredient_quantity(ctx context.Context, field graphql.CollectedField, obj *model.Ingredient) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Ingredient_quantity,
+		func(ctx context.Context) (any, error) {
+			return obj.Quantity, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Ingredient_quantity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ingredient",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Ingredient_unit(ctx context.Context, field graphql.CollectedField, obj *model.Ingredient) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Ingredient_unit,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Ingredient().Unit(ctx, obj)
+		},
+		nil,
+		ec.marshalNUnitResult2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐUnitResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Ingredient_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Ingredient",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type UnitResult does not have child fields")
 		},
 	}
 	return fc, nil
@@ -860,35 +979,6 @@ func (ec *executionContext) fieldContext_Query_recipe(ctx context.Context, field
 	if fc.Args, err = ec.field_Query_recipe_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_recipeTags(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_recipeTags,
-		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().RecipeTags(ctx)
-		},
-		nil,
-		ec.marshalNString2ᚕstringᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_recipeTags(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
 	}
 	return fc, nil
 }
@@ -1172,6 +1262,10 @@ func (ec *executionContext) fieldContext_Recipe_ingredients(_ context.Context, f
 			switch field.Name {
 			case "name":
 				return ec.fieldContext_Ingredient_name(ctx, field)
+			case "quantity":
+				return ec.fieldContext_Ingredient_quantity(ctx, field)
+			case "unit":
+				return ec.fieldContext_Ingredient_unit(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Ingredient", field.Name)
 		},
@@ -1506,6 +1600,151 @@ func (ec *executionContext) fieldContext_RecipeEdge_node(_ context.Context, fiel
 				return ec.fieldContext_Recipe_updatedBy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Recipe", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Unit_id(ctx context.Context, field graphql.CollectedField, obj *model.Unit) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Unit_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐID,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Unit_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Unit",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Unit_name(ctx context.Context, field graphql.CollectedField, obj *model.Unit) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Unit_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Unit_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Unit",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Unit_symbol(ctx context.Context, field graphql.CollectedField, obj *model.Unit) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Unit_symbol,
+		func(ctx context.Context) (any, error) {
+			return obj.Symbol, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Unit_symbol(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Unit",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Unit_baseType(ctx context.Context, field graphql.CollectedField, obj *model.Unit) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Unit_baseType,
+		func(ctx context.Context) (any, error) {
+			return obj.BaseType, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Unit_baseType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Unit",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Unit_system(ctx context.Context, field graphql.CollectedField, obj *model.Unit) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Unit_system,
+		func(ctx context.Context) (any, error) {
+			return obj.System, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Unit_system(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Unit",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3158,6 +3397,29 @@ func (ec *executionContext) _RecipeResult(ctx context.Context, sel ast.Selection
 	}
 }
 
+func (ec *executionContext) _UnitResult(ctx context.Context, sel ast.SelectionSet, obj model.UnitResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.Unit:
+		return ec._Unit(ctx, sel, &obj)
+	case *model.Unit:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Unit(ctx, sel, obj)
+	case model.NotFoundError:
+		return ec._NotFoundError(ctx, sel, &obj)
+	case *model.NotFoundError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NotFoundError(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _UserResult(ctx context.Context, sel ast.SelectionSet, obj model.UserResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -3199,8 +3461,49 @@ func (ec *executionContext) _Ingredient(ctx context.Context, sel ast.SelectionSe
 		case "name":
 			out.Values[i] = ec._Ingredient_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "quantity":
+			out.Values[i] = ec._Ingredient_quantity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "unit":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Ingredient_unit(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3224,7 +3527,7 @@ func (ec *executionContext) _Ingredient(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
-var notFoundErrorImplementors = []string{"NotFoundError", "RecipeResult", "UserResult"}
+var notFoundErrorImplementors = []string{"NotFoundError", "RecipeResult", "UnitResult", "UserResult"}
 
 func (ec *executionContext) _NotFoundError(ctx context.Context, sel ast.SelectionSet, obj *model.NotFoundError) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, notFoundErrorImplementors)
@@ -3362,28 +3665,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_recipe(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "recipeTags":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_recipeTags(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -3642,6 +3923,65 @@ func (ec *executionContext) _RecipeEdge(ctx context.Context, sel ast.SelectionSe
 			}
 		case "node":
 			out.Values[i] = ec._RecipeEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var unitImplementors = []string{"Unit", "UnitResult"}
+
+func (ec *executionContext) _Unit(ctx context.Context, sel ast.SelectionSet, obj *model.Unit) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, unitImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Unit")
+		case "id":
+			out.Values[i] = ec._Unit_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Unit_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "symbol":
+			out.Values[i] = ec._Unit_symbol(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "baseType":
+			out.Values[i] = ec._Unit_baseType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "system":
+			out.Values[i] = ec._Unit_system(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -4079,6 +4419,22 @@ func (ec *executionContext) marshalNCursor2githubᚗcomᚋbᚑseaᚋsupplyᚑrun
 	return res
 }
 
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
 func (ec *executionContext) unmarshalNID2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐID(ctx context.Context, v any) (model.ID, error) {
 	res, err := model.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4279,6 +4635,16 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNUnitResult2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐUnitResult(ctx context.Context, sel ast.SelectionSet, v model.UnitResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UnitResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUserResult2githubᚗcomᚋbᚑseaᚋsupplyᚑrunᚑapiᚋinternalᚋgraphqlᚋmodelᚐUserResult(ctx context.Context, sel ast.SelectionSet, v model.UserResult) graphql.Marshaler {
