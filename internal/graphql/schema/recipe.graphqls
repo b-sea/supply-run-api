@@ -16,8 +16,12 @@ type Recipe
   updatedBy: UserResult! @goField(forceResolver: true)
 }
 
-type Ingredient {
+type Ingredient 
+  @goExtraField(name: "UnitID", type: "github.com/b-sea/supply-run-api/internal/entity.ID")
+{
   name: String!
+  quantity: Float!
+  unit: UnitResult! @goField(forceResolver: true)
 }
 
 union RecipeResult = Recipe | NotFoundError
@@ -42,5 +46,4 @@ type RecipeEdge {
 extend type Query {
   findRecipes(filter: RecipeFilter, page: Page, order: Order): RecipeConnection!
   recipe(id: ID!): RecipeResult!
-  recipeTags: [String!]!
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/b-sea/supply-run-api/internal/entity"
 	"github.com/b-sea/supply-run-api/internal/recipe"
-	units "github.com/bcicen/go-units"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -138,55 +137,28 @@ func TestAddIngredient(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Add an ingredient
-	changed, err := recipe.AddIngredient("flour", 2, units.Pound)(test)
+	changed, err := recipe.AddIngredient("flour", 2, entity.NewID("123-unit"))(test)
 	assert.True(t, changed)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(test.Ingredients()))
 	assert.Equal(t, "flour", test.Ingredients()[0].Name())
 	assert.Equal(t, float64(2), test.Ingredients()[0].Quantity())
-	assert.Equal(t, units.Pound, test.Ingredients()[0].Unit())
-
-	// Add a different ingredient
-	changed, err = recipe.AddIngredient("water", 6, units.Liter)(test)
-	assert.True(t, changed)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 2, len(test.Ingredients()))
-	assert.Equal(t, "water", test.Ingredients()[1].Name())
-	assert.Equal(t, float64(6), test.Ingredients()[1].Quantity())
-	assert.Equal(t, units.Liter, test.Ingredients()[1].Unit())
-
-	// Add a duplicate ingredient with a different unit, should be case-insensitive
-	changed, err = recipe.AddIngredient("fLoUR", 250, units.Gram)(test)
-	assert.True(t, changed)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 2, len(test.Ingredients()))
-	assert.Equal(t, "flour", test.Ingredients()[0].Name())
-	assert.Equal(t, 2.551155655462194, test.Ingredients()[0].Quantity())
-	assert.Equal(t, units.Pound, test.Ingredients()[0].Unit())
-
-	// Add a duplicate ingredient with an incompatible unit
-	changed, err = recipe.AddIngredient("water", 2, units.Celsius)(test)
-	assert.False(t, changed)
-	assert.Error(t, err)
-
-	assert.Equal(t, 2, len(test.Ingredients()))
+	assert.Equal(t, entity.NewID("123-unit"), test.Ingredients()[0].UnitID())
 
 	// Add a ingredient with no name
-	changed, err = recipe.AddIngredient("", 1, units.KiloGram)(test)
+	changed, err = recipe.AddIngredient("", 1, entity.NewID("123-unit"))(test)
 	assert.False(t, changed)
 	assert.Error(t, err)
 
-	assert.Equal(t, 2, len(test.Ingredients()))
+	assert.Equal(t, 1, len(test.Ingredients()))
 
 	// Add a ingredient with bad quantity
-	changed, err = recipe.AddIngredient("something", 0, units.KiloGram)(test)
+	changed, err = recipe.AddIngredient("something", 0, entity.NewID("123-unit"))(test)
 	assert.False(t, changed)
 	assert.Error(t, err)
 
-	assert.Equal(t, 2, len(test.Ingredients()))
+	assert.Equal(t, 1, len(test.Ingredients()))
 }
 
 func TestClearIngredients(t *testing.T) {
@@ -194,8 +166,8 @@ func TestClearIngredients(t *testing.T) {
 
 	test, err := recipe.New(
 		entity.NewRandomID(), "test", time.Now(), entity.NewRandomID(),
-		recipe.AddIngredient("flour", 2, units.Pound),
-		recipe.AddIngredient("water", 6, units.Liter),
+		recipe.AddIngredient("flour", 2, entity.NewID("123-unit")),
+		recipe.AddIngredient("water", 6, entity.NewID("456-unit")),
 	)
 	assert.NoError(t, err)
 

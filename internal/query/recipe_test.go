@@ -15,7 +15,7 @@ func TestFindRecipe(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		repo   query.Repository
+		repo   query.RecipeRepository
 		filter query.RecipeFilter
 		page   query.Pagination
 		order  query.Order
@@ -25,7 +25,7 @@ func TestFindRecipe(t *testing.T) {
 
 	tests := map[string]testCase{
 		"first page": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				FindRecipesResult: []*query.Recipe{
 					{ID: entity.NewID("1")},
 					{ID: entity.NewID("2")},
@@ -62,7 +62,7 @@ func TestFindRecipe(t *testing.T) {
 			err: nil,
 		},
 		"middle page": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				FindRecipesResult: []*query.Recipe{
 					{ID: entity.NewID("2")},
 					{ID: entity.NewID("3")},
@@ -100,7 +100,7 @@ func TestFindRecipe(t *testing.T) {
 			err: nil,
 		},
 		"last page": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				FindRecipesResult: []*query.Recipe{
 					{ID: entity.NewID("5")},
 					{ID: entity.NewID("6")},
@@ -135,7 +135,7 @@ func TestFindRecipe(t *testing.T) {
 			err: nil,
 		},
 		"no page size": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				FindRecipesResult: []*query.Recipe{},
 				FindRecipesErr:    nil,
 			},
@@ -149,7 +149,7 @@ func TestFindRecipe(t *testing.T) {
 			err: nil,
 		},
 		"no find results": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				FindRecipesResult: []*query.Recipe{},
 				FindRecipesErr:    nil,
 			},
@@ -165,7 +165,7 @@ func TestFindRecipe(t *testing.T) {
 			err: nil,
 		},
 		"unknown error": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				FindRecipesResult: nil,
 				FindRecipesErr:    errors.New("something went wrong"),
 			},
@@ -181,7 +181,7 @@ func TestFindRecipe(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			service := query.NewService(test.repo)
+			service := query.NewService(test.repo, &mock.QueryUnitRepository{}, &mock.QueryUserRepository{})
 			result, err := service.FindRecipes(context.Background(), test.filter, test.page, test.order)
 
 			assert.Equal(t, test.result, result)
@@ -198,7 +198,7 @@ func TestGetRecipe(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		repo   query.Repository
+		repo   query.RecipeRepository
 		id     entity.ID
 		result *query.Recipe
 		err    error
@@ -206,7 +206,7 @@ func TestGetRecipe(t *testing.T) {
 
 	tests := map[string]testCase{
 		"success": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{
 					{ID: entity.NewID("recipe-123")},
 				},
@@ -219,7 +219,7 @@ func TestGetRecipe(t *testing.T) {
 			err: nil,
 		},
 		"not found": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{},
 				GetRecipesErr:    nil,
 			},
@@ -228,7 +228,7 @@ func TestGetRecipe(t *testing.T) {
 			err:    entity.ErrNotFound,
 		},
 		"unknown error": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				GetRecipesResult: nil,
 				GetRecipesErr:    errors.New("something went wrong"),
 			},
@@ -240,55 +240,8 @@ func TestGetRecipe(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			service := query.NewService(test.repo)
+			service := query.NewService(test.repo, &mock.QueryUnitRepository{}, &mock.QueryUserRepository{})
 			result, err := service.GetRecipe(context.Background(), test.id)
-
-			assert.Equal(t, test.result, result)
-			if test.err == nil {
-				assert.NoError(t, err)
-			} else {
-				assert.ErrorAs(t, err, &test.err)
-			}
-		})
-	}
-}
-
-func TestAllRecipeTags(t *testing.T) {
-	t.Parallel()
-
-	type testCase struct {
-		repo   query.Repository
-		result []string
-		err    error
-	}
-
-	tests := map[string]testCase{
-		"success": {
-			repo: &mock.QueryRepository{
-				AllRecipeTagsResult: []string{
-					"gluten free", "breakfast",
-				},
-				AllRecipeTagsErr: nil,
-			},
-			result: []string{
-				"breakfast", "gluten free",
-			},
-			err: nil,
-		},
-		"unknown error": {
-			repo: &mock.QueryRepository{
-				AllRecipeTagsResult: nil,
-				AllRecipeTagsErr:    errors.New("something went wrong"),
-			},
-			result: nil,
-			err:    errors.New("something went wrong"),
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			service := query.NewService(test.repo)
-			result, err := service.AllRecipeTags(context.Background())
 
 			assert.Equal(t, test.result, result)
 			if test.err == nil {

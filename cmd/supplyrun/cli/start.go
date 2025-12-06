@@ -39,7 +39,7 @@ func startRun() func(cmd *cobra.Command, args []string) error {
 		}
 
 		log := setupLogger(cfg)
-		recorder := metrics.NewNoOp()
+		recorder := metrics.NewPrometheus()
 
 		svr := server.New(log, recorder,
 			server.SetPort(cfg.Server.Port),
@@ -48,7 +48,12 @@ func startRun() func(cmd *cobra.Command, args []string) error {
 			server.SetVersion(cmd.Version),
 			server.AddHandler(
 				"/graphql",
-				graphql.New(query.NewService(&mock.QueryRepository{}), recorder),
+				graphql.New(
+					query.NewService(
+						&mock.QueryRecipeRepository{},
+						&mock.QueryUnitRepository{},
+						&mock.QueryUserRepository{},
+					), recorder),
 				http.MethodPost,
 			),
 		)

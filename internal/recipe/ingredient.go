@@ -1,11 +1,14 @@
 package recipe
 
-import units "github.com/bcicen/go-units"
+import (
+	"github.com/b-sea/supply-run-api/internal/entity"
+)
 
 // Ingredient is a Recipe ingredient.
 type Ingredient struct {
-	name  string
-	value units.Value
+	name     string
+	quantity float64
+	unitID   entity.ID
 }
 
 // Name returns the Ingredient name.
@@ -15,10 +18,10 @@ func (i *Ingredient) Name() string {
 
 // Quantity returns the amount of Ingredient.
 func (i *Ingredient) Quantity() float64 {
-	return i.value.Float()
+	return i.quantity
 }
 
-// Unit returns the Ingredient default unit.
-func (i *Ingredient) Unit() units.Unit {
-	return i.value.Unit()
+// UnitID returns the Ingredient unit id.
+func (i *Ingredient) UnitID() entity.ID {
+	return i.unitID
 }

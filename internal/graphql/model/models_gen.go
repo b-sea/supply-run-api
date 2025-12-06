@@ -16,12 +16,19 @@ type RecipeResult interface {
 	IsRecipeResult()
 }
 
+type UnitResult interface {
+	IsUnitResult()
+}
+
 type UserResult interface {
 	IsUserResult()
 }
 
 type Ingredient struct {
-	Name string `json:"name"`
+	Name     string     `json:"name"`
+	Quantity float64    `json:"quantity"`
+	Unit     UnitResult `json:"unit"`
+	UnitID   entity.ID  `json:"-"`
 }
 
 type NotFoundError struct {
@@ -29,6 +36,8 @@ type NotFoundError struct {
 }
 
 func (NotFoundError) IsRecipeResult() {}
+
+func (NotFoundError) IsUnitResult() {}
 
 func (NotFoundError) IsUserResult() {}
 
@@ -87,6 +96,16 @@ type RecipeFilter struct {
 	CreatedBy   *ID      `json:"createdBy,omitempty"`
 	IsFavorite  *bool    `json:"isFavorite,omitempty"`
 }
+
+type Unit struct {
+	ID       ID     `json:"id"`
+	Name     string `json:"name"`
+	Symbol   string `json:"symbol"`
+	BaseType string `json:"baseType"`
+	System   string `json:"system"`
+}
+
+func (Unit) IsUnitResult() {}
 
 type User struct {
 	ID       ID     `json:"id"`

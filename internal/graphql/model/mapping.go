@@ -21,7 +21,9 @@ func NewRecipe(recipe *query.Recipe) *Recipe {
 	ingredients := make([]*Ingredient, len(recipe.Ingredients))
 	for i := range recipe.Ingredients {
 		ingredients[i] = &Ingredient{
-			Name: recipe.Ingredients[i].Name,
+			Name:     recipe.Ingredients[i].Name,
+			Quantity: recipe.Ingredients[i].Quantity,
+			UnitID:   recipe.Ingredients[i].UnitID,
 		}
 	}
 
@@ -109,6 +111,25 @@ func NewRecipeConnection(page *query.RecipePage) *RecipeConnection {
 	}
 
 	return result
+}
+
+// NewUnitID creates a new graphql Unit ID.
+func NewUnitID(id entity.ID) ID {
+	return ID{
+		Key:  id,
+		Kind: UnitKind,
+	}
+}
+
+// NewUnit creates a new graphql Unit.
+func NewUnit(unit *query.Unit) *Unit {
+	return &Unit{
+		ID:       NewUnitID(unit.ID),
+		Name:     unit.Name,
+		Symbol:   unit.Symbol,
+		BaseType: unit.BaseType,
+		System:   unit.System,
+	}
 }
 
 // NewUserID creates a new graphql User ID.

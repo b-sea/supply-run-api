@@ -18,7 +18,7 @@ func TestQueryFindRecipes(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		repo     query.Repository
+		repo     query.RecipeRepository
 		options  []client.Option
 		query    string
 		response map[string]any
@@ -27,7 +27,7 @@ func TestQueryFindRecipes(t *testing.T) {
 
 	tests := map[string]testCase{
 		"success": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				FindRecipesResult: []*query.Recipe{
 					{ID: entity.NewID("1")},
 				},
@@ -49,7 +49,7 @@ func TestQueryFindRecipes(t *testing.T) {
 			err: nil,
 		},
 		"repo error": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				FindRecipesErr: errors.New("some random error"),
 			},
 			query:    `query { findRecipes { pageInfo { hasNextPage hasPreviousPage startCursor endCursor } edges { cursor node { id }}}}`,
@@ -60,7 +60,14 @@ func TestQueryFindRecipes(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
+			server := graphql.New(
+				query.NewService(
+					test.repo,
+					&mock.QueryUnitRepository{},
+					&mock.QueryUserRepository{},
+				),
+				metrics.NewNoOp(),
+			)
 			testClient := client.New(server)
 
 			var response map[string]any
@@ -81,7 +88,7 @@ func TestQueryRecipe(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		repo     query.Repository
+		repo     query.RecipeRepository
 		options  []client.Option
 		query    string
 		response map[string]any
@@ -90,7 +97,7 @@ func TestQueryRecipe(t *testing.T) {
 
 	tests := map[string]testCase{
 		"success": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{
 					{ID: entity.NewID("1")},
 				},
@@ -106,7 +113,7 @@ func TestQueryRecipe(t *testing.T) {
 			err: nil,
 		},
 		"not found": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{},
 			},
 			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
@@ -120,7 +127,7 @@ func TestQueryRecipe(t *testing.T) {
 			err: nil,
 		},
 		"bad id": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{},
 			},
 			options: []client.Option{client.Var("id", model.NewUserID(entity.NewID("1")).String())},
@@ -134,7 +141,7 @@ func TestQueryRecipe(t *testing.T) {
 			err: nil,
 		},
 		"repo error": {
-			repo: &mock.QueryRepository{
+			repo: &mock.QueryRecipeRepository{
 				GetRecipesErr: errors.New("some random error"),
 			},
 			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
@@ -146,64 +153,14 @@ func TestQueryRecipe(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
-			testClient := client.New(server)
-
-			var response map[string]any
-
-			err := testClient.Post(test.query, &response, test.options...)
-
-			assert.Equal(t, test.response, response)
-			if test.err == nil {
-				assert.NoError(t, err)
-			} else {
-				assert.ErrorAs(t, err, &test.err)
-			}
-		})
-	}
-}
-
-func TestQueryTags(t *testing.T) {
-	t.Parallel()
-
-	type testCase struct {
-		repo     query.Repository
-		options  []client.Option
-		query    string
-		response map[string]any
-		err      error
-	}
-
-	tests := map[string]testCase{
-		"success": {
-			repo: &mock.QueryRepository{
-				AllRecipeTagsResult: []string{
-					"vegan",
-					"breakfast",
-				},
-			},
-			query: `query { recipeTags }`,
-			response: map[string]any{
-				"recipeTags": []any{
-					"breakfast",
-					"vegan",
-				},
-			},
-			err: nil,
-		},
-		"repo error": {
-			repo: &mock.QueryRepository{
-				AllRecipeTagsErr: errors.New("some random error"),
-			},
-			query:    `query { recipeTags }`,
-			response: nil,
-			err:      errors.New("some random error"),
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
+			server := graphql.New(
+				query.NewService(
+					test.repo,
+					&mock.QueryUnitRepository{},
+					&mock.QueryUserRepository{},
+				),
+				metrics.NewNoOp(),
+			)
 			testClient := client.New(server)
 
 			var response map[string]any
@@ -224,7 +181,8 @@ func TestQueryRecipeCreatedBy(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		repo     query.Repository
+		recipes  query.RecipeRepository
+		users    query.UserRepository
 		options  []client.Option
 		query    string
 		response map[string]any
@@ -233,9 +191,11 @@ func TestQueryRecipeCreatedBy(t *testing.T) {
 
 	tests := map[string]testCase{
 		"success": {
-			repo: &mock.QueryRepository{
+			recipes: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), CreatedBy: entity.NewID("U1")}},
-				GetUsersResult:   []*query.User{{ID: entity.NewID("U1")}},
+			},
+			users: &mock.QueryUserRepository{
+				GetUsersResult: []*query.User{{ID: entity.NewID("U1")}},
 			},
 			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("R1")).String())},
 			query:   `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { createdBy { __typename ...on User { id }}}}}`,
@@ -250,9 +210,11 @@ func TestQueryRecipeCreatedBy(t *testing.T) {
 			err: nil,
 		},
 		"repo error": {
-			repo: &mock.QueryRepository{
+			recipes: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), CreatedBy: entity.NewID("U1")}},
-				GetUsersErr:      errors.New("some random error"),
+			},
+			users: &mock.QueryUserRepository{
+				GetUsersErr: errors.New("some random error"),
 			},
 			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
 			query:    `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { createdBy { __typename ...on User { id }}}}}`,
@@ -263,7 +225,14 @@ func TestQueryRecipeCreatedBy(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
+			server := graphql.New(
+				query.NewService(
+					test.recipes,
+					&mock.QueryUnitRepository{},
+					test.users,
+				),
+				metrics.NewNoOp(),
+			)
 			testClient := client.New(server)
 
 			var response map[string]any
@@ -284,7 +253,8 @@ func TestQueryRecipeUpdatedBy(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		repo     query.Repository
+		recipes  query.RecipeRepository
+		users    query.UserRepository
 		options  []client.Option
 		query    string
 		response map[string]any
@@ -293,9 +263,11 @@ func TestQueryRecipeUpdatedBy(t *testing.T) {
 
 	tests := map[string]testCase{
 		"success": {
-			repo: &mock.QueryRepository{
+			recipes: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), UpdatedBy: entity.NewID("U1")}},
-				GetUsersResult:   []*query.User{{ID: entity.NewID("U1")}},
+			},
+			users: &mock.QueryUserRepository{
+				GetUsersResult: []*query.User{{ID: entity.NewID("U1")}},
 			},
 			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("R1")).String())},
 			query:   `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { updatedBy { __typename ...on User { id }}}}}`,
@@ -310,9 +282,11 @@ func TestQueryRecipeUpdatedBy(t *testing.T) {
 			err: nil,
 		},
 		"repo error": {
-			repo: &mock.QueryRepository{
+			recipes: &mock.QueryRecipeRepository{
 				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), UpdatedBy: entity.NewID("U1")}},
-				GetUsersErr:      errors.New("some random error"),
+			},
+			users: &mock.QueryUserRepository{
+				GetUsersErr: errors.New("some random error"),
 			},
 			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
 			query:    `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { updatedBy { __typename ...on User { id }}}}}`,
@@ -323,7 +297,90 @@ func TestQueryRecipeUpdatedBy(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			server := graphql.New(query.NewService(test.repo), metrics.NewNoOp())
+			server := graphql.New(
+				query.NewService(
+					test.recipes,
+					&mock.QueryUnitRepository{},
+					test.users,
+				),
+				metrics.NewNoOp(),
+			)
+			testClient := client.New(server)
+
+			var response map[string]any
+
+			err := testClient.Post(test.query, &response, test.options...)
+
+			assert.Equal(t, test.response, response)
+			if test.err == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorAs(t, err, &test.err)
+			}
+		})
+	}
+}
+
+func TestQueryIngredientUnit(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		recipes  query.RecipeRepository
+		units    query.UnitRepository
+		options  []client.Option
+		query    string
+		response map[string]any
+		err      error
+	}
+
+	tests := map[string]testCase{
+		"success": {
+			recipes: &mock.QueryRecipeRepository{
+				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), Ingredients: []query.Ingredient{{UnitID: entity.NewID("U1")}}}},
+			},
+			units: &mock.QueryUnitRepository{
+				GetUnitsResult: []*query.Unit{{ID: entity.NewID("U1")}},
+			},
+			options: []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("R1")).String())},
+			query:   `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { ingredients { unit { __typename ...on Unit { id }}}}}}`,
+			response: map[string]any{
+				"recipe": map[string]any{
+					"ingredients": []any{
+						map[string]any{
+							"unit": map[string]any{
+								"__typename": "Unit",
+								"id":         "dW5pdDpVMQ==",
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		"repo error": {
+			recipes: &mock.QueryRecipeRepository{
+				GetRecipesResult: []*query.Recipe{{ID: entity.NewID("R1"), Ingredients: []query.Ingredient{{UnitID: entity.NewID("U1")}}}},
+			},
+			units: &mock.QueryUnitRepository{
+				GetUnitsErr: errors.New("some random error"),
+			},
+			options:  []client.Option{client.Var("id", model.NewRecipeID(entity.NewID("1")).String())},
+			query:    `query recipeByID($id: ID!){ recipe(id: $id) { ...on Recipe { ingredients { unit { __typename ...on Unit { id }}}}}}`,
+			response: nil,
+			err:      errors.New("some random error"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			server := graphql.New(
+				query.NewService(
+					test.recipes,
+					test.units,
+					&mock.QueryUserRepository{},
+				),
+				metrics.NewNoOp(),
+			)
 			testClient := client.New(server)
 
 			var response map[string]any

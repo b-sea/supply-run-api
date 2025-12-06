@@ -11,36 +11,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetUsers(t *testing.T) {
+func TestGetUnits(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		repo   query.UserRepository
+		repo   query.UnitRepository
 		ids    []entity.ID
-		result []*query.User
+		result []*query.Unit
 		err    error
 	}
 
 	tests := map[string]testCase{
 		"success": {
-			repo: &mock.QueryUserRepository{
-				GetUsersResult: []*query.User{
-					{ID: entity.NewID("user-123")},
+			repo: &mock.QueryUnitRepository{
+				GetUnitsResult: []*query.Unit{
+					{ID: entity.NewID("unit-123")},
 				},
-				GetUsersErr: nil,
+				GetUnitsErr: nil,
 			},
-			ids: []entity.ID{entity.NewID("user-123")},
-			result: []*query.User{
-				{ID: entity.NewID("user-123")},
+			ids: []entity.ID{entity.NewID("unit-123")},
+			result: []*query.Unit{
+				{ID: entity.NewID("unit-123")},
 			},
 			err: nil,
 		},
 		"unknown error": {
-			repo: &mock.QueryUserRepository{
-				GetUsersResult: nil,
-				GetUsersErr:    errors.New("something went wrong"),
+			repo: &mock.QueryUnitRepository{
+				GetUnitsResult: nil,
+				GetUnitsErr:    errors.New("something went wrong"),
 			},
-			ids:    []entity.ID{entity.NewID("user-123")},
+			ids:    []entity.ID{entity.NewID("unit-123")},
 			result: nil,
 			err:    errors.New("something went wrong"),
 		},
@@ -48,8 +48,8 @@ func TestGetUsers(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			service := query.NewService(&mock.QueryRecipeRepository{}, &mock.QueryUnitRepository{}, test.repo)
-			result, err := service.GetUsers(context.Background(), test.ids)
+			service := query.NewService(&mock.QueryRecipeRepository{}, test.repo, &mock.QueryUserRepository{})
+			result, err := service.GetUnits(context.Background(), test.ids)
 
 			assert.Equal(t, test.result, result)
 			if test.err == nil {

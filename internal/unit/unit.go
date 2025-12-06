@@ -27,7 +27,7 @@ func New(name string, symbol string, options ...Option) *Unit {
 		option(unit)
 	}
 
-	unit.id = entity.NewID(string(unit.system) + string(unit.base) + name)
+	unit.id = entity.NewID(unit.system + unit.base + name)
 
 	return unit
 }

@@ -27,7 +27,6 @@ func New(queries *query.Service, recorder Recorder) *GraphQL {
 
 	server := handler.NewDefaultServer(schema)
 	server.AroundFields(fieldTelemetry(recorder))
-	server.AroundOperations(operationTelemetry())
 	server.SetRecoverFunc(recoverTelemetry(recorder))
 
 	graphql.Handler = dataloader.Middleware(queries, server)

@@ -28,13 +28,89 @@ func dataloaderError(v any) error {
 
 // Dataloader batches and consolidates data calls.
 type Dataloader struct {
+	getUnit *dataloader.Loader
 	getUser *dataloader.Loader
 }
 
 // New creates a new Dataloader.
 func New(queries *query.Service) *Dataloader {
 	return &Dataloader{
+		getUnit: dataloader.NewBatchedLoader(batchGetUnit(queries)),
 		getUser: dataloader.NewBatchedLoader(batchGetUser(queries)),
+	}
+}
+
+// GetUnit returns a UnitResult from an ID.
+func GetUnit(ctx context.Context, id entity.ID) (model.UnitResult, error) { //nolint: ireturn
+	loader, err := FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := loader.getUnit.Load(ctx, dataloader.StringKey(id.String()))()
+	if err != nil {
+		return nil, err
+	}
+
+	result, _ := data.(model.UnitResult)
+
+	return result, nil
+}
+
+func batchGetUnit(queries *query.Service) dataloader.BatchFunc { //nolint: dupl
+	return func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
+		start := time.Now()
+
+		defer func() {
+			zerolog.Ctx(ctx).Info().
+				Dur("duration_ms", time.Since(start)).
+				Int("batch", len(keys)).
+				Msg("unit dataloader complete")
+		}()
+
+		keyOrder := make(map[entity.ID]int, len(keys))
+		ids := make([]entity.ID, len(keys))
+
+		for i, key := range keys {
+			ids[i] = entity.NewID(key.String())
+			keyOrder[ids[i]] = i
+		}
+
+		results := make([]*dataloader.Result, len(keys))
+
+		units, err := queries.GetUnits(ctx, ids)
+		if err != nil {
+			for i := range keys {
+				results[i] = &dataloader.Result{Error: err}
+			}
+
+			return results
+		}
+
+		for _, unit := range units {
+			i, ok := keyOrder[unit.ID]
+			if !ok {
+				results[i] = &dataloader.Result{
+					Data: &model.NotFoundError{ID: model.NewUnitID(unit.ID)},
+				}
+
+				continue
+			}
+
+			results[i] = &dataloader.Result{
+				Data: model.NewUnit(unit),
+			}
+
+			delete(keyOrder, unit.ID)
+		}
+
+		for id, i := range keyOrder {
+			results[i] = &dataloader.Result{
+				Data: &model.NotFoundError{ID: model.NewUnitID(id)},
+			}
+		}
+
+		return results
 	}
 }
 
@@ -55,7 +131,7 @@ func GetUser(ctx context.Context, id entity.ID) (model.UserResult, error) { //no
 	return result, nil
 }
 
-func batchGetUser(queries *query.Service) dataloader.BatchFunc {
+func batchGetUser(queries *query.Service) dataloader.BatchFunc { //nolint: dupl
 	return func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
 		start := time.Now()
 
@@ -63,7 +139,7 @@ func batchGetUser(queries *query.Service) dataloader.BatchFunc {
 			zerolog.Ctx(ctx).Info().
 				Dur("duration_ms", time.Since(start)).
 				Int("batch", len(keys)).
-				Msg("dataloader complete")
+				Msg("user dataloader complete")
 		}()
 
 		keyOrder := make(map[entity.ID]int, len(keys))

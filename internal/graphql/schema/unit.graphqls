@@ -1,0 +1,9 @@
+type Unit {
+    id: ID!
+    name: String!
+    symbol: String!
+    baseType: String!
+    system: String!
+}
+
+union UnitResult = Unit | NotFoundError
